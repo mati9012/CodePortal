@@ -143,6 +143,7 @@ export function TextField({
   label,
   hint,
   error,
+  aside,
   className,
   inputClassName,
   id: ownId,
@@ -150,7 +151,7 @@ export function TextField({
 }: FieldMeta & Omit<InputProps, "invalid"> & { inputClassName?: string }) {
   const { id, describedBy, invalid } = useFieldIds({ hint, error }, ownId);
   return (
-    <Field id={id} label={label} hint={hint} error={error} className={className}>
+    <Field id={id} label={label} hint={hint} error={error} aside={aside} className={className}>
       <Input
         id={id}
         aria-describedby={describedBy}

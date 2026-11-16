@@ -1,7 +1,11 @@
+import { useId } from "react";
 import { cn } from "@/lib/cn";
 
 /** Znak `</>` w niebieskim zaokrąglonym kwadracie. */
 export function LogoMark({ size = 28, className }: { size?: number; className?: string }) {
+  // Unikalne id gradientu: przy kilku logo na stronie (np. ukryty sidebar desktopowy)
+  // url(#…) wskazywałby na definicję w elemencie z display:none i znak by znikał.
+  const gradient = `cp-logo-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
   return (
     <svg
       width={size}
@@ -11,12 +15,12 @@ export function LogoMark({ size = 28, className }: { size?: number; className?: 
       className={cn("shrink-0", className)}
     >
       <defs>
-        <linearGradient id="cp-logo-bg" x1="0" y1="0" x2="1" y2="1">
+        <linearGradient id={gradient} x1="0" y1="0" x2="1" y2="1">
           <stop offset="0" stopColor="#4C74FF" />
           <stop offset="1" stopColor="#2447E0" />
         </linearGradient>
       </defs>
-      <rect width="32" height="32" rx="8" fill="url(#cp-logo-bg)" />
+      <rect width="32" height="32" rx="8" fill={`url(#${gradient})`} />
       <path
         d="M12.5 11 7.5 16l5 5M19.5 11l5 5-5 5M17.6 9.5l-3.2 13"
         fill="none"

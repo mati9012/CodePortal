@@ -42,6 +42,11 @@ services:
       S3_SECRET_KEY: ${S3_SECRET_KEY:-codeportal-dev}
       S3_BUCKET: ${S3_BUCKET:-codeportal}
       WEB_ORIGIN: ${PUBLIC_WEB_URL:-http://localhost:3000}
+      BETTER_AUTH_URL: ${PUBLIC_API_URL:-http://localhost:4000}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?Ustaw BETTER_AUTH_SECRET w .env (openssl rand -base64 32)}
+      COOKIE_DOMAIN: ${COOKIE_DOMAIN:-}
+      SMTP_URL: ${SMTP_URL:-}
+      MAIL_FROM: ${MAIL_FROM:-CodePortal <no-reply@codeportal.local>}
     ports: ["${API_PORT:-4000}:4000"]
     depends_on:
       migrate: { condition: service_completed_successfully }

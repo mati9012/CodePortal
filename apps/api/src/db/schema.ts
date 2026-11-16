@@ -19,6 +19,11 @@ import {
 const id = () => uuid().primaryKey().defaultRandom();
 const createdAt = () => timestamp({ withTimezone: true }).notNull().defaultNow();
 const ts = () => timestamp({ withTimezone: true });
+const updatedAt = () =>
+  timestamp({ withTimezone: true })
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date());
 
 /**
  * Kod zawsze jako lista plików: zadanie jednojęzyczne ma jeden plik (`main.py`),
@@ -67,15 +72,74 @@ export const organizations = pgTable('organizations', {
   createdAt: createdAt(),
 });
 
+// users + auth_sessions + accounts + verifications: tabele Better Auth (src/auth/auth.ts).
+// Nazwy pól TS muszą zgadzać się z modelem Better Auth; hasło trzyma `accounts.password`.
 export const users = pgTable('users', {
   id: id(),
   email: text().notNull().unique(),
+  emailVerified: boolean().notNull().default(false),
   name: text().notNull(),
-  passwordHash: text(),
+  image: text(),
   role: role().notNull().default('organizer'),
   orgId: uuid().references(() => organizations.id),
   createdAt: createdAt(),
+  updatedAt: updatedAt(),
 });
+
+/** Sesje logowania kont (nauczyciel/organizator). Nie mylić z `sessions` — podejściami do testu. */
+export const authSessions = pgTable(
+  'auth_sessions',
+  {
+    id: id(),
+    userId: uuid()
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    token: text().notNull().unique(),
+    expiresAt: timestamp({ withTimezone: true }).notNull(),
+    ipAddress: text(),
+    userAgent: text(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [index().on(t.userId)],
+);
+
+/** Sposoby logowania użytkownika: `credential` (e-mail + hasło) oraz później google/microsoft. */
+export const accounts = pgTable(
+  'accounts',
+  {
+    id: id(),
+    userId: uuid()
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    accountId: text().notNull(),
+    providerId: text().notNull(),
+    password: text(),
+    accessToken: text(),
+    refreshToken: text(),
+    idToken: text(),
+    accessTokenExpiresAt: ts(),
+    refreshTokenExpiresAt: ts(),
+    scope: text(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [index().on(t.userId)],
+);
+
+/** Tokeny weryfikacji e-maila i resetu hasła. */
+export const verifications = pgTable(
+  'verifications',
+  {
+    id: id(),
+    identifier: text().notNull(),
+    value: text().notNull(),
+    expiresAt: timestamp({ withTimezone: true }).notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [index().on(t.identifier)],
+);
 
 export const problems = pgTable('problems', {
   id: id(),
@@ -289,6 +353,8 @@ export const organizationsRelations = relations(organizations, ({ many }) => ({
 
 export const usersRelations = relations(users, ({ one, many }) => ({
   org: one(organizations, { fields: [users.orgId], references: [organizations.id] }),
+  authSessions: many(authSessions),
+  accounts: many(accounts),
   problems: many(problems),
   exams: many(exams),
 }));
@@ -348,4 +414,12 @@ export const submissionResultsRelations = relations(submissionResults, ({ one })
 export const reviewsRelations = relations(reviews, ({ one }) => ({
   submission: one(submissions, { fields: [reviews.submissionId], references: [submissions.id] }),
   reviewer: one(users, { fields: [reviews.reviewerId], references: [users.id] }),
+}));
+
+export const authSessionsRelations = relations(authSessions, ({ one }) => ({
+  user: one(users, { fields: [authSessions.userId], references: [users.id] }),
+}));
+
+export const accountsRelations = relations(accounts, ({ one }) => ({
+  user: one(users, { fields: [accounts.userId], references: [users.id] }),
 }));

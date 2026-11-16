@@ -23,6 +23,8 @@ COPY --from=prod-deps /repo/apps/api/node_modules ./apps/api/node_modules
 COPY --from=build /repo/apps/api/dist ./apps/api/dist
 COPY apps/api/package.json ./apps/api/
 COPY apps/api/drizzle ./apps/api/drizzle
+# Grafiki e-maili (Bit jako załącznik inline)
+COPY apps/api/src/emails/static ./apps/api/src/emails/static
 WORKDIR /repo/apps/api
 USER node
 EXPOSE 4000

@@ -4,6 +4,7 @@ import { DrizzleModule } from '@nestjs/drizzle';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
+import { AuthModule } from './auth/auth.module.js';
 import { schema } from './db/index.js';
 
 // Moduły domenowe (wg docs/SPEC.md): auth, problems, exams, sessions, submissions, integrity.
@@ -20,6 +21,7 @@ import { schema } from './db/index.js';
         casing: 'snake_case' as const,
       }),
     }),
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],

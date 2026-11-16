@@ -68,7 +68,9 @@ export function AutosaveStatus({ state, className }: { state: AutosaveState; cla
       {state.kind === "saved" && (
         <>
           <Check aria-hidden />
-          Zapisano {state.secondsAgo < 60 ? `${state.secondsAgo} s` : `${Math.floor(state.secondsAgo / 60)} min`} temu
+          {state.secondsAgo < 5
+            ? "Zapisano przed chwilą"
+            : `Zapisano ${state.secondsAgo < 60 ? `${state.secondsAgo} s` : `${Math.floor(state.secondsAgo / 60)} min`} temu`}
         </>
       )}
       {state.kind === "saving" && (

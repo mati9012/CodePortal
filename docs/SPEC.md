@@ -156,6 +156,8 @@ Stack: Next.js, NestJS, PostgreSQL, Redis, Docker na VPS. **Kluczowa zasada: kod
 
 API tylko przyjmuje zgłoszenia i wrzuca je do kolejki; workery sandboxa pobierają je, uruchamiają i zapisują werdykty, a wynik wraca do przeglądarki przez WebSocket.
 
+**Logowanie**: konta organizatorów obsługuje Better Auth (e-mail + hasło z weryfikacją adresu, reset hasła, limity prób; później Google/Microsoft). Endpointy pod `/api/auth/*` w API, sesja w ciasteczku `httpOnly` (prefiks `cp`), wspólnym dla frontu i API przez `COOKIE_DOMAIN`. Trasy API dla zalogowanych chroni `AuthGuard`. Uczestnicy nie mają kont: wchodzą kodem testu i dostają osobny token sesji egzaminu.
+
 **Bezpieczeństwo**: testy ukryte nigdy nie trafiają do przeglądarki; czas testu liczony wyłącznie na serwerze; uczestnik dostaje krótkotrwały token sesji powiązany z egzaminem; rate limit na uruchomienia (np. 1 na 3 s).
 
 ```mermaid
@@ -185,7 +187,8 @@ Rdzeń to 14 tabel w PostgreSQL; zdarzenia telemetrii idą do osobnej, partycjon
 
 | Tabela | Najważniejsze pola |
 | --- | --- |
-| `users` | id, email, name, role (organizer/participant/admin), org_id |
+| `users` | id, email, email_verified, name, image, role (organizer/participant/admin), org_id |
+| `auth_sessions`, `accounts`, `verifications` | tabele Better Auth: sesje logowania, hasło/konta OAuth, tokeny weryfikacji i resetu |
 | `organizations` | id, name, type (szkoła/firma), plan, grading_scale (JSON) |
 | `problems` | id, owner_id, title, statement_md, languages[], starter_code (JSON, pliki startowe), time_limit_ms, memory_limit_mb, type (io/unit/web), checker_type, checker_code, variants (JSON) |
 | `test_cases` | id, problem_id, group_no, input, expected_output, points, is_sample, script (dla `web`: test strony w Playwright zamiast input/expected) |
@@ -208,7 +211,8 @@ MVP da się zbudować w ok. 6–8 tygodni w pojedynkę, jeśli ocenianie oprze s
 
 ### Etap 1 — MVP (działający sprawdzian w klasie)
 
-- [ ] Konta organizatorów, wejście uczestnika z linku jako gość
+- [x] Konta organizatorów: rejestracja, weryfikacja e-maila, logowanie, reset hasła
+- [ ] Wejście uczestnika kodem/linkiem jako gość (token sesji egzaminu)
 - [ ] Bank zadań: treść MD, testy jawne/ukryte, limity
 - [ ] Edytor Monaco: HTML, CSS, JS, Python, Java, C#, C++, PHP — kolory, podstawowe podpowiedzi, formatowanie
 - [ ] Judge0 self-hosted + kolejka BullMQ, werdykty i punkty (Python, Java, C#, C++, JS, PHP)
