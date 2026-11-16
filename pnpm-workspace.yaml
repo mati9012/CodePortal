@@ -1,0 +1,10 @@
+packages:
+  - apps/*
+  - packages/*
+
+allowBuilds:
+  sharp: true
+  unrs-resolver: true
+  "@nestjs/core": true
+  esbuild: true
+  msgpackr-extract: true

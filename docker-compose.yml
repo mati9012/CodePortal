@@ -1,0 +1,68 @@
+# CodePortal — cały stack w Dockerze.
+#
+#   docker compose up -d --build      # infrastruktura + narzędzia + migracje, API, web
+#
+# Infrastruktura i narzędzia są w docker-compose.infra.yml (do samodzielnego
+# użycia przy `pnpm dev`: `pnpm db:up`). Domyślne wartości działają bez pliku
+# .env — żeby je zmienić, utwórz .env obok (zob. .env.example, sekcja „Docker Compose”).
+
+name: codeportal
+
+include:
+  - docker-compose.infra.yml
+
+x-db-url: &db-url postgresql://${POSTGRES_USER:-codeportal}:${POSTGRES_PASSWORD:-codeportal}@postgres:5432/${POSTGRES_DB:-codeportal}
+
+services:
+  # Jednorazowo: migracje Drizzle (apps/api/drizzle) przed startem API.
+  # Używa obrazu zbudowanego dla usługi `api`.
+  migrate:
+    image: codeportal-api
+    pull_policy: never
+    command: ["node", "dist/db/migrate.js"]
+    environment:
+      DATABASE_URL: *db-url
+    depends_on:
+      postgres: { condition: service_healthy }
+    restart: "no"
+
+  api:
+    image: codeportal-api
+    pull_policy: build
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    environment:
+      PORT: 4000
+      DATABASE_URL: *db-url
+      REDIS_URL: redis://redis:6379
+      S3_ENDPOINT: http://s3:8333
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-codeportal}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:-codeportal-dev}
+      S3_BUCKET: ${S3_BUCKET:-codeportal}
+      WEB_ORIGIN: ${PUBLIC_WEB_URL:-http://localhost:3000}
+    ports: ["${API_PORT:-4000}:4000"]
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      s3-init: { condition: service_completed_successfully }
+      redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4000/"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  web:
+    image: codeportal-web
+    pull_policy: build
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        # Adres API widziany z przeglądarki użytkownika (nie z sieci Dockera).
+        NEXT_PUBLIC_API_URL: ${PUBLIC_API_URL:-http://localhost:4000}
+    restart: unless-stopped
+    ports: ["${WEB_PORT:-3000}:3000"]
+    depends_on:
+      api: { condition: service_healthy }

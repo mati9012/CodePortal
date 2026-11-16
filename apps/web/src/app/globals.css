@@ -1,0 +1,276 @@
+@import "tailwindcss";
+
+/*
+ * CodePortal — design system 2.0 (zob. docs/DESIGN.md)
+ *
+ * Motyw: atrybut data-theme="light" | "dark" na <html> albo na dowolnym
+ * kontenerze (np. widok testu jest zawsze ciemny). Bez atrybutu obowiązuje
+ * motyw systemu. Komponenty używają wyłącznie tokenów semantycznych
+ * (bg-canvas, text-ink, border-line, bg-success-soft…), więc same przełączają się z motywem.
+ */
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/* ── Tokeny stałe (te same w obu motywach) ───────────────────────────────── */
+@theme {
+  /* Akcja · Blue */
+  --color-primary-50: #eef2ff;
+  --color-primary-100: #dfe6ff;
+  --color-primary-300: #9ab2ff;
+  --color-primary-500: #335cff;
+  --color-primary-600: #2447e0;
+  --color-primary-800: #1a36b8;
+
+  /* Marka · Mint (z Bita) */
+  --color-mint-50: #f0fdfa;
+  --color-mint-100: #ccfbf1;
+  --color-mint-300: #5eead4;
+  --color-mint-500: #14b8a6;
+  --color-mint-700: #0f766e;
+  --color-mint-900: #0b2a28;
+
+  /* Typografia — rodziny ustawia next/font w layout.tsx */
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-jakarta), var(--font-inter), ui-sans-serif, sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, "SFMono-Regular", monospace;
+
+  --text-display: 3.5rem;
+  --text-display--line-height: 3.875rem;
+  --text-display--letter-spacing: -0.035em;
+  --text-display--font-weight: 800;
+  --text-h1: 2rem;
+  --text-h1--line-height: 2.5rem;
+  --text-h1--letter-spacing: -0.025em;
+  --text-h1--font-weight: 800;
+  /* H2 nie ma w projekcie — wartość pośrednia między H1 a H3 */
+  --text-h2: 1.5rem;
+  --text-h2--line-height: 2rem;
+  --text-h2--letter-spacing: -0.02em;
+  --text-h2--font-weight: 700;
+  --text-h3: 1.125rem;
+  --text-h3--line-height: 1.625rem;
+  --text-h3--letter-spacing: -0.01em;
+  --text-h3--font-weight: 700;
+  --text-body: 0.875rem;
+  --text-body--line-height: 1.375rem;
+  --text-code: 0.875rem;
+  --text-code--line-height: 1.375rem;
+  /* Etykiety sekcji: „ZADANIE 2 Z 4 · 30 PKT” */
+  --text-label: 0.6875rem;
+  --text-label--line-height: 1rem;
+  --text-label--letter-spacing: 0.08em;
+  --text-label--font-weight: 600;
+
+  /* Kształty */
+  --radius-tag: 8px;
+  --radius-input: 10px;
+  --radius-card: 14px;
+  --radius-modal: 20px;
+}
+
+/* ── Tokeny semantyczne (zależne od motywu) ──────────────────────────────── */
+@theme inline {
+  --color-canvas: var(--cp-canvas);
+  --color-surface: var(--cp-surface);
+  --color-subtle: var(--cp-subtle);
+  --color-line: var(--cp-border);
+  --color-ink: var(--cp-text);
+  --color-ink-2: var(--cp-text-2);
+  --color-ink-3: var(--cp-text-3);
+
+  --color-accent: var(--cp-accent);
+  --color-accent-hover: var(--cp-accent-hover);
+  --color-accent-soft: var(--cp-accent-soft);
+  --color-accent-ink: var(--cp-accent-ink);
+  --color-on-accent: #ffffff;
+
+  /* Statusy i werdykty: solid / soft (tło) / ink (tekst na soft) */
+  --color-success: var(--cp-success);
+  --color-success-soft: var(--cp-success-soft);
+  --color-success-ink: var(--cp-success-ink);
+  --color-danger: var(--cp-danger);
+  --color-danger-hover: var(--cp-danger-hover);
+  --color-danger-soft: var(--cp-danger-soft);
+  --color-danger-ink: var(--cp-danger-ink);
+  --color-warning: var(--cp-warning);
+  --color-warning-soft: var(--cp-warning-soft);
+  --color-warning-ink: var(--cp-warning-ink);
+  --color-orange: var(--cp-orange);
+  --color-orange-soft: var(--cp-orange-soft);
+  --color-orange-ink: var(--cp-orange-ink);
+  --color-pink: var(--cp-pink);
+  --color-pink-soft: var(--cp-pink-soft);
+  --color-pink-ink: var(--cp-pink-ink);
+  --color-violet: var(--cp-violet);
+  --color-violet-soft: var(--cp-violet-soft);
+  --color-violet-ink: var(--cp-violet-ink);
+  --color-info: var(--cp-accent);
+  --color-info-soft: var(--cp-accent-soft);
+  --color-info-ink: var(--cp-accent-ink);
+
+  --color-overlay: var(--cp-overlay);
+
+  --shadow-sm: var(--cp-shadow-sm);
+  --shadow-md: var(--cp-shadow-md);
+  --shadow-lg: var(--cp-shadow-lg);
+}
+
+/* Jasny */
+:root,
+[data-theme="light"] {
+  color-scheme: light;
+  --cp-canvas: #f6f7fb;
+  --cp-surface: #ffffff;
+  --cp-subtle: #f1f3f8;
+  --cp-border: #e6e9f0;
+  --cp-text: #0f172a;
+  --cp-text-2: #475569;
+  --cp-text-3: #94a3b8;
+
+  --cp-accent: #335cff;
+  --cp-accent-hover: #2447e0;
+  --cp-accent-soft: #eef2ff;
+  --cp-accent-ink: #2447e0;
+
+  --cp-success: #16a34a;
+  --cp-success-soft: #dcfce7;
+  --cp-success-ink: #15803d;
+  --cp-danger: #dc2626;
+  --cp-danger-hover: #b91c1c;
+  --cp-danger-soft: #fee2e2;
+  --cp-danger-ink: #b91c1c;
+  --cp-warning: #d97706;
+  --cp-warning-soft: #fef3c7;
+  --cp-warning-ink: #b45309;
+  --cp-orange: #ea580c;
+  --cp-orange-soft: #ffedd5;
+  --cp-orange-ink: #c2410c;
+  --cp-pink: #db2777;
+  --cp-pink-soft: #fce7f3;
+  --cp-pink-ink: #be185d;
+  --cp-violet: #7c3aed;
+  --cp-violet-soft: #ede9fe;
+  --cp-violet-ink: #6d28d9;
+
+  --cp-overlay: rgb(15 23 42 / 0.45);
+  --cp-shadow-sm: 0 1px 2px rgb(15 23 42 / 0.05), 0 1px 3px rgb(15 23 42 / 0.04);
+  --cp-shadow-md: 0 4px 12px rgb(15 23 42 / 0.08), 0 2px 4px rgb(15 23 42 / 0.04);
+  --cp-shadow-lg: 0 20px 48px rgb(15 23 42 / 0.16), 0 6px 16px rgb(15 23 42 / 0.06);
+}
+
+/* Ciemny (IDE) — te same wartości w dwóch miejscach: wybór jawny
+   i motyw systemu (gdy użytkownik nie wybrał jasnego). Zmieniaj oba bloki. */
+[data-theme="dark"] {
+  color-scheme: dark;
+  --cp-canvas: #090b12;
+  --cp-surface: #11141d;
+  --cp-subtle: #181c27;
+  --cp-border: #222737;
+  --cp-text: #f1f5f9;
+  --cp-text-2: #a3adc2;
+  --cp-text-3: #64708a;
+
+  --cp-accent: #5b7cff;
+  --cp-accent-hover: #335cff;
+  --cp-accent-soft: rgb(51 92 255 / 0.16);
+  --cp-accent-ink: #9ab2ff;
+
+  --cp-success: #22c55e;
+  --cp-success-soft: rgb(34 197 94 / 0.14);
+  --cp-success-ink: #4ade80;
+  --cp-danger: #ef4444;
+  --cp-danger-hover: #dc2626;
+  --cp-danger-soft: rgb(239 68 68 / 0.15);
+  --cp-danger-ink: #f87171;
+  --cp-warning: #f59e0b;
+  --cp-warning-soft: rgb(245 158 11 / 0.15);
+  --cp-warning-ink: #fbbf24;
+  --cp-orange: #f97316;
+  --cp-orange-soft: rgb(249 115 22 / 0.15);
+  --cp-orange-ink: #fb923c;
+  --cp-pink: #ec4899;
+  --cp-pink-soft: rgb(236 72 153 / 0.15);
+  --cp-pink-ink: #f472b6;
+  --cp-violet: #8b5cf6;
+  --cp-violet-soft: rgb(139 92 246 / 0.16);
+  --cp-violet-ink: #a78bfa;
+
+  --cp-overlay: rgb(0 0 0 / 0.6);
+  --cp-shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
+  --cp-shadow-md: 0 6px 16px rgb(0 0 0 / 0.45);
+  --cp-shadow-lg: 0 24px 56px rgb(0 0 0 / 0.6);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --cp-canvas: #090b12;
+    --cp-surface: #11141d;
+    --cp-subtle: #181c27;
+    --cp-border: #222737;
+    --cp-text: #f1f5f9;
+    --cp-text-2: #a3adc2;
+    --cp-text-3: #64708a;
+    --cp-accent: #5b7cff;
+    --cp-accent-hover: #335cff;
+    --cp-accent-soft: rgb(51 92 255 / 0.16);
+    --cp-accent-ink: #9ab2ff;
+    --cp-success: #22c55e;
+    --cp-success-soft: rgb(34 197 94 / 0.14);
+    --cp-success-ink: #4ade80;
+    --cp-danger: #ef4444;
+    --cp-danger-hover: #dc2626;
+    --cp-danger-soft: rgb(239 68 68 / 0.15);
+    --cp-danger-ink: #f87171;
+    --cp-warning: #f59e0b;
+    --cp-warning-soft: rgb(245 158 11 / 0.15);
+    --cp-warning-ink: #fbbf24;
+    --cp-orange: #f97316;
+    --cp-orange-soft: rgb(249 115 22 / 0.15);
+    --cp-orange-ink: #fb923c;
+    --cp-pink: #ec4899;
+    --cp-pink-soft: rgb(236 72 153 / 0.15);
+    --cp-pink-ink: #f472b6;
+    --cp-violet: #8b5cf6;
+    --cp-violet-soft: rgb(139 92 246 / 0.16);
+    --cp-violet-ink: #a78bfa;
+    --cp-overlay: rgb(0 0 0 / 0.6);
+    --cp-shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
+    --cp-shadow-md: 0 6px 16px rgb(0 0 0 / 0.45);
+    --cp-shadow-lg: 0 24px 56px rgb(0 0 0 / 0.6);
+  }
+}
+
+/* ── Baza ────────────────────────────────────────────────────────────────── */
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    background: var(--cp-canvas);
+    color: var(--cp-text);
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+  }
+
+  /* Kontener z wymuszonym motywem dostaje własne tło i kolor tekstu */
+  [data-theme] {
+    color: var(--cp-text);
+  }
+
+  code,
+  kbd,
+  pre,
+  samp {
+    font-family: var(--font-mono);
+    font-variant-ligatures: none;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--cp-accent);
+    outline-offset: 2px;
+  }
+}
