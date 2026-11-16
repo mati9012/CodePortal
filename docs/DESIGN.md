@@ -91,7 +91,7 @@ Oznaczenia z PDF. „później” = poza MVP według projektu. Ekrany pełnostro
 
 1. **Kamera:** projekt mówi „tylko podgląd na żywo, bez nagrywania”; SPEC zakłada zdjęcie co N sekund zapisywane w S3.
 2. **Limit uruchomień:** projekt — co 5 s; SPEC — 1 na 3 s.
-3. **Języki:** strona główna obiecuje C++, Python, Java, C#, JavaScript, Pascal; MVP w SPEC to Python + C++.
+3. **Języki:** ✅ ustalone (15.11.2026) — HTML, CSS, JavaScript, Python, Java, C#, C++, PHP oraz zadania łączące kilka języków (np. HTML + CSS + PHP). Pascal odpada. SPEC zaktualizowany (zadania łączone typu `web`).
 4. **Zatwierdzanie wyników:** projekt ma stan „Do sprawdzenia” i przycisk „Zatwierdź i pokaż wyniki uczniom” — model danych potrzebuje pola typu `results_approved_at` na `exams` oraz statusu przeglądu per uczeń (Do przejrzenia / Oznaczony / Zatwierdzony).
 5. **Limit wyjść z pełnego ekranu** i „sesja czeka na decyzję nauczyciela” po przekroczeniu — brak w modelu (`settings` JSON + status sesji).
 6. **Klasy i grupy, organizacje z członkami, pule zadań „losuj 1 z N”, progi ocen per test** — są w projekcie, w modelu danych częściowo (brak tabel klas/uczniów klasy).

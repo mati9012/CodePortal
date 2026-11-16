@@ -70,22 +70,32 @@ Podstawą jest **Monaco Editor** (silnik VS Code) — daje podświetlanie, multi
 
 | Funkcja IDE | Jak zrealizować | AI? |
 | --- | --- | --- |
-| Kolorowanie składni | Monaco (Monarch) dla C++, Python, Java, JS/TS, C#, Pascal | nie |
-| Podpowiedzi (IntelliSense) | serwery języka: Pyright, clangd, jdtls, tsserver przez `monaco-languageclient` + WebSocket | nie |
+| Kolorowanie składni | Monaco (Monarch) dla HTML, CSS, JavaScript, Python, Java, C#, C++, PHP | nie |
+| Podpowiedzi (IntelliSense) | HTML, CSS i JS mają je wbudowane w Monaco; pozostałe przez serwery języka: Pyright, clangd, jdtls, OmniSharp, Intelephense (`monaco-languageclient` + WebSocket) | nie |
 | Błędy na bieżąco | diagnostyka z LSP (czerwone podkreślenia) | nie |
-| Formatowanie | Prettier (JS/TS), clang-format, black/ruff — skrót `Shift+Alt+F` | nie |
+| Formatowanie | Prettier (HTML/CSS/JS), black/ruff, clang-format, google-java-format, CSharpier, php-cs-fixer — skrót `Shift+Alt+F` | nie |
 | Snippety | własne, włączane/wyłączane przez organizatora | nie |
 | Uruchomienie z własnym wejściem | przycisk „Uruchom” → sandbox, wynik w konsoli | nie |
+| Podgląd strony | zadania webowe: podgląd na żywo w `iframe` z `sandbox` (HTML/CSS/JS w przeglądarce, PHP renderowany w sandboxie) | nie |
 | Testy przykładowe | przycisk „Sprawdź na przykładach” (jawne testy) | nie |
 
 ### Uwagi wdrożeniowe
 
 - LSP odpalaj w osobnych kontenerach (po jednym na sesję lub pula), z limitem pamięci.
-- Na start można zrobić tylko Python + C++, bo to 90% szkół i olimpiad.
+- Języki: **HTML, CSS, JavaScript, Python, Java, C#, C++, PHP** oraz zadania łączące kilka z nich (np. HTML + CSS + PHP).
 - Tańsza alternatywa na MVP: same podpowiedzi Monaco (słowa z dokumentu + snippety + lista funkcji biblioteki standardowej w JSON) bez LSP.
 - Organizator może wyłączyć wybrane funkcje (np. bez podpowiedzi na sprawdzianie ze składni).
 - Autozapis wersji co kilka sekund do backendu — awaria przeglądarki nie kasuje pracy.
 - Ciemny/jasny motyw, rozmiar czcionki, układ: zadanie po lewej, edytor po prawej, konsola na dole.
+
+### Zadania łączone (webowe)
+
+Zadanie może mieć kilka plików w różnych językach, np. `index.html` + `style.css` + `script.js` albo `index.php` + `style.css`.
+
+- Organizator wybiera zestaw języków i pliki startowe; uczestnik widzi zakładki plików w edytorze.
+- HTML/CSS/JS uruchamiają się w przeglądarce uczestnika w izolowanym `iframe` (`sandbox`, bez dostępu do strony testu); PHP renderuje worker sandboxa i zwraca HTML do podglądu.
+- Ocenianie nie porównuje wyjścia z wejściem, tylko sprawdza wynikową stronę: worker otwiera ją w przeglądarce headless (Playwright) i odpala testy organizatora — istnienie elementów (selektory), tekst, atrybuty, obliczone style, reakcję na kliknięcie / wysłanie formularza (PHP). Każdy test to punkty i werdykt `OK`/`WA`/`RE`, jak w zadaniach klasycznych.
+- Do tego ręczna rubryka nauczyciela (wygląd, semantyka), bo nie wszystko da się sprawdzić automatem.
 
 ## Przepływy użytkownika
 
@@ -121,7 +131,7 @@ Ocena jest automatyczna (testy w sandboxie) z opcjonalną ręczną korektą i do
 - Izolacja: `isolate` (sandbox z olimpiad, cgroups) albo gotowy Judge0 self-hosted na start. Bez sieci, limit CPU, RAM, procesów, rozmiaru wyjścia.
 - Werdykty: `OK`, `WA` (zła odpowiedź), `TLE` (przekroczony czas), `MLE` (pamięć), `RE` (błąd wykonania), `CE` (błąd kompilacji).
 - Porównywanie: dokładne, ignorujące białe znaki, liczby z tolerancją (ε), lub własny checker (gdy poprawnych odpowiedzi jest wiele).
-- Typy zadań poza klasycznym wejście/wyjście: testy jednostkowe (uczestnik pisze funkcję, system odpala pytest/JUnit/Jest) — wygodniejsze w szkole.
+- Typy zadań poza klasycznym wejście/wyjście: testy jednostkowe (uczestnik pisze funkcję, system odpala pytest/JUnit/Jest/xUnit/PHPUnit) — wygodniejsze w szkole; zadania webowe (testy strony w Playwright, patrz „Zadania łączone”).
 
 ### Punktacja
 
@@ -177,15 +187,15 @@ Rdzeń to 14 tabel w PostgreSQL; zdarzenia telemetrii idą do osobnej, partycjon
 | --- | --- |
 | `users` | id, email, name, role (organizer/participant/admin), org_id |
 | `organizations` | id, name, type (szkoła/firma), plan, grading_scale (JSON) |
-| `problems` | id, owner_id, title, statement_md, languages[], starter_code (JSON), time_limit_ms, memory_limit_mb, type (io/unit), checker_type, checker_code, variants (JSON) |
-| `test_cases` | id, problem_id, group_no, input, expected_output, points, is_sample |
+| `problems` | id, owner_id, title, statement_md, languages[], starter_code (JSON, pliki startowe), time_limit_ms, memory_limit_mb, type (io/unit/web), checker_type, checker_code, variants (JSON) |
+| `test_cases` | id, problem_id, group_no, input, expected_output, points, is_sample, script (dla `web`: test strony w Playwright zamiast input/expected) |
 | `exams` | id, owner_id, mode (test/contest), slug, starts_at, ends_at, duration_min, attempts, protection_level, results_visibility, scoring_rule, settings (JSON) |
 | `exam_problems` | exam_id, problem_id, order, points_override, pool_tag |
 | `exam_access` | exam_id, type (link/password/list/sso), secret_hash, allowed_emails[] |
 | `sessions` | id, exam_id, user_id lub guest_name, started_at, deadline_at, finished_at, ip, user_agent, risk_score, status |
-| `code_snapshots` | id, session_id, problem_id, language, code, created_at (autozapis) |
+| `code_snapshots` | id, session_id, problem_id, language, files (JSON: lista `{path, content}`, jeden plik w zadaniach jednojęzycznych), created_at (autozapis) |
 | `editor_events` | id, session_id, ts, type (delta/paste_blocked/blur/fullscreen_exit/run), payload (JSONB) — partycje po dacie |
-| `submissions` | id, session_id, problem_id, language, code, status, verdict, score, time_ms, memory_kb, submitted_at |
+| `submissions` | id, session_id, problem_id, language, files (JSON), status, verdict, score, time_ms, memory_kb, submitted_at |
 | `submission_results` | submission_id, test_case_id, verdict, time_ms, memory_kb, output_excerpt |
 | `reviews` | submission_id, reviewer_id, manual_score, rubric (JSON), flagged_dishonest, comment |
 | `similarity_pairs` | exam_id, problem_id, submission_a, submission_b, score, method |
@@ -200,8 +210,9 @@ MVP da się zbudować w ok. 6–8 tygodni w pojedynkę, jeśli ocenianie oprze s
 
 - [ ] Konta organizatorów, wejście uczestnika z linku jako gość
 - [ ] Bank zadań: treść MD, testy jawne/ukryte, limity
-- [ ] Edytor Monaco: Python + C++, kolory, podstawowe podpowiedzi, formatowanie
-- [ ] Judge0 self-hosted + kolejka BullMQ, werdykty i punkty
+- [ ] Edytor Monaco: HTML, CSS, JS, Python, Java, C#, C++, PHP — kolory, podstawowe podpowiedzi, formatowanie
+- [ ] Judge0 self-hosted + kolejka BullMQ, werdykty i punkty (Python, Java, C#, C++, JS, PHP)
+- [ ] Zadania łączone (np. HTML + CSS + PHP): wiele plików, podgląd na żywo, ocena ręczna
 - [ ] Blokada wklejania, fullscreen, log zdarzeń (blur, paste)
 - [ ] Wyniki + eksport CSV
 
@@ -211,12 +222,13 @@ MVP da się zbudować w ok. 6–8 tygodni w pojedynkę, jeśli ocenianie oprze s
 - [ ] Wskaźnik ryzyka i panel na żywo dla nauczyciela
 - [ ] Podobieństwo między zgłoszeniami (tokeny/AST)
 - [ ] Zadania z testami jednostkowymi, ocena 1–6, ręczna rubryka
+- [ ] Automatyczne testy zadań webowych (Playwright w workerze)
 - [ ] Logowanie Google/Microsoft (konta szkolne), klasy/grupy
 
 ### Etap 3 — Konkursy i skala
 
 - [ ] Tryb konkursu: ranking na żywo, ICPC/IOI, subtaski, własne checkery
-- [ ] LSP (Pyright, clangd) w kontenerach, więcej języków
+- [ ] LSP (Pyright, clangd, jdtls, OmniSharp, Intelephense) w kontenerach
 - [ ] Własny sandbox na isolate zamiast Judge0, autoskalowanie workerów
 - [ ] Warianty zadań, pytania o własny kod po zgłoszeniu, porównanie z rozwiązaniami AI
 - [ ] Tryb Egzamin: aplikacja kiosk (Tauri) lub integracja z Safe Exam Browser

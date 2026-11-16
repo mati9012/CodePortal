@@ -20,10 +20,19 @@ const id = () => uuid().primaryKey().defaultRandom();
 const createdAt = () => timestamp({ withTimezone: true }).notNull().defaultNow();
 const ts = () => timestamp({ withTimezone: true });
 
+/**
+ * Kod zawsze jako lista plików: zadanie jednojęzyczne ma jeden plik (`main.py`),
+ * zadanie webowe kilka (`index.php`, `style.css`…). Język pliku wynika z rozszerzenia.
+ */
+export type CodeFile = { path: string; content: string };
+/** Pliki startowe per wariant języka, np. `{ "python": [...], "html+css+php": [...] }`. */
+export type StarterCode = Record<string, CodeFile[]>;
+
 // ── Enumy ────────────────────────────────────────────────────────────────────
 export const role = pgEnum('role', ['organizer', 'participant', 'admin']);
 export const orgType = pgEnum('org_type', ['school', 'company']);
-export const problemType = pgEnum('problem_type', ['io', 'unit']);
+// io: wejście/wyjście · unit: testy jednostkowe · web: strona (HTML/CSS/JS/PHP) testowana w Playwright
+export const problemType = pgEnum('problem_type', ['io', 'unit', 'web']);
 export const checkerType = pgEnum('checker_type', [
   'exact',
   'ignore_whitespace',
@@ -75,8 +84,9 @@ export const problems = pgTable('problems', {
     .references(() => users.id),
   title: text().notNull(),
   statementMd: text().notNull(),
+  // Dozwolone języki; zestaw łączony zapisany z plusami, np. 'html+css+php'.
   languages: text().array().notNull().default([]),
-  starterCode: jsonb(),
+  starterCode: jsonb().$type<StarterCode>(),
   timeLimitMs: integer().notNull().default(1000),
   memoryLimitMb: integer().notNull().default(256),
   type: problemType().notNull().default('io'),
@@ -92,8 +102,10 @@ export const testCases = pgTable('test_cases', {
     .notNull()
     .references(() => problems.id, { onDelete: 'cascade' }),
   groupNo: integer().notNull().default(0),
-  input: text().notNull(),
-  expectedOutput: text().notNull(),
+  input: text().notNull().default(''),
+  expectedOutput: text().notNull().default(''),
+  /** Zadania `web`: skrypt testu strony (Playwright) zamiast input/expectedOutput. */
+  script: text(),
   points: integer().notNull().default(1),
   isSample: boolean().notNull().default(false),
 });
@@ -172,7 +184,7 @@ export const codeSnapshots = pgTable(
       .references(() => sessions.id, { onDelete: 'cascade' }),
     problemId: uuid().notNull(),
     language: text().notNull(),
-    code: text().notNull(),
+    files: jsonb().$type<CodeFile[]>().notNull(),
     createdAt: createdAt(),
   },
   (t) => [index().on(t.sessionId, t.problemId, t.createdAt)],
@@ -205,7 +217,7 @@ export const submissions = pgTable(
       .notNull()
       .references(() => problems.id),
     language: text().notNull(),
-    code: text().notNull(),
+    files: jsonb().$type<CodeFile[]>().notNull(),
     status: submissionStatus().notNull().default('queued'),
     verdict: verdict(),
     score: real(),
