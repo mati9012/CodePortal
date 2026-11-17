@@ -3,11 +3,11 @@
 import { Checkbox, SelectionCard } from "@/components/ui/choice";
 import { Input, SelectField } from "@/components/ui/field";
 import { Card } from "@/components/ui/surface";
-import { LANGUAGE_LABEL, PROBLEM_TYPE_LABEL, type Language, type Problem } from "@/lib/mock/panel";
-import { CHECKER_LABEL, type Checker } from "@/lib/mock/problem-detail";
+import type { Checker, Language, ProblemSummary } from "@codeportal/contracts";
+import { CHECKER_LABEL, LANGUAGE_LABEL, PROBLEM_TYPE_LABEL } from "@/lib/panel-labels";
 import type { EditorTabProps } from "./types";
 
-const TYPE_DESCRIPTION: Record<Problem["type"], string> = {
+const TYPE_DESCRIPTION: Record<ProblemSummary["type"], string> = {
   io: "Program czyta dane i wypisuje wynik, porównywany z oczekiwanym.",
   unit: "Uczeń pisze klasę lub funkcję, sprawdzają ją testy jednostkowe.",
   web: "Strona HTML/CSS/JS/PHP oceniana testami w przeglądarce albo ręcznie.",
@@ -17,7 +17,7 @@ const LANGUAGES = Object.keys(LANGUAGE_LABEL) as Language[];
 
 export function TabSettings({ detail, update }: EditorTabProps) {
   const { problem } = detail;
-  const setProblem = (change: Partial<Problem>) => update((d) => ({ problem: { ...d.problem, ...change } }));
+  const setProblem = (change: Partial<ProblemSummary>) => update((d) => ({ problem: { ...d.problem, ...change } }));
   const enabled = new Set(problem.languages.flat());
 
   const toggleLanguage = (lang: Language, on: boolean) => {
@@ -34,7 +34,7 @@ export function TabSettings({ detail, update }: EditorTabProps) {
       <Card className="flex flex-col gap-3 p-5">
         <span className="text-[13px] font-semibold text-ink">Rodzaj zadania</span>
         <div className="grid gap-3 md:grid-cols-3">
-          {(Object.keys(PROBLEM_TYPE_LABEL) as Problem["type"][]).map((type) => (
+          {(Object.keys(PROBLEM_TYPE_LABEL) as ProblemSummary["type"][]).map((type) => (
             <SelectionCard
               key={type}
               name="problem-type"

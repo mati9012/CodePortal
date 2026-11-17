@@ -1,7 +1,7 @@
 import { ArrowUp, Check, CircleHelp, ClipboardX, Clock, Copy, Minimize2, Pause, TrendingUp } from "lucide-react";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/cn";
-import type { SignalKind } from "@/lib/mock/exam-session";
+import type { SignalKind } from "@codeportal/contracts";
 
 const SIGNAL_META: Record<SignalKind, { icon: ReactNode; tone: string; label: string }> = {
   paste: { icon: <ClipboardX />, tone: "bg-danger-soft text-danger-ink", label: "Wklejenie" },

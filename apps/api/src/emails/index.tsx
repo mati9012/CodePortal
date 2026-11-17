@@ -1,19 +1,28 @@
 import { render } from '@react-email/components';
 import { fileURLToPath } from 'node:url';
 import type { ReactElement } from 'react';
+import ClassInvite from './class-invite.js';
 import ResetPassword from './reset-password.js';
 import VerifyEmail from './verify-email.js';
 
 export const BIT_ATTACHMENT = {
   filename: 'bit.png',
   cid: 'bit',
-  path: fileURLToPath(new URL('../../src/emails/static/bit.png', import.meta.url)),
+  path: fileURLToPath(
+    new URL('../../src/emails/static/bit.png', import.meta.url),
+  ),
 };
 
 export type RenderedEmail = { subject: string; html: string; text: string };
 
-async function renderEmail(subject: string, element: ReactElement): Promise<RenderedEmail> {
-  const [html, text] = await Promise.all([render(element), render(element, { plainText: true })]);
+async function renderEmail(
+  subject: string,
+  element: ReactElement,
+): Promise<RenderedEmail> {
+  const [html, text] = await Promise.all([
+    render(element),
+    render(element, { plainText: true }),
+  ]);
   return { subject, html, text };
 }
 
@@ -24,11 +33,33 @@ export const emails = {
   verifyEmail: (name: string, url: string) =>
     renderEmail(
       'Potwierdź adres e-mail w CodePortal',
-      <VerifyEmail name={firstName(name)} url={url} webUrl={webUrl()} bitSrc="cid:bit" />,
+      <VerifyEmail
+        name={firstName(name)}
+        url={url}
+        webUrl={webUrl()}
+        bitSrc="cid:bit"
+      />,
     ),
   resetPassword: (name: string, url: string) =>
     renderEmail(
       'Ustaw nowe hasło w CodePortal',
-      <ResetPassword name={firstName(name)} url={url} webUrl={webUrl()} bitSrc="cid:bit" />,
+      <ResetPassword
+        name={firstName(name)}
+        url={url}
+        webUrl={webUrl()}
+        bitSrc="cid:bit"
+      />,
+    ),
+  classInvite: (name: string, teacher: string, group: string) =>
+    renderEmail(
+      `${teacher} zaprasza cię do: ${group}`,
+      <ClassInvite
+        name={firstName(name)}
+        teacher={teacher}
+        group={group}
+        url={webUrl()}
+        webUrl={webUrl()}
+        bitSrc="cid:bit"
+      />,
     ),
 };

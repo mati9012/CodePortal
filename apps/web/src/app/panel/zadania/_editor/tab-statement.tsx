@@ -3,7 +3,7 @@
 import { TextField, TextareaField } from "@/components/ui/field";
 import { Card } from "@/components/ui/surface";
 import { SegmentedControl } from "@/components/ui/tabs";
-import type { Problem } from "@/lib/mock/panel";
+import type { ProblemSummary } from "@codeportal/contracts";
 import type { EditorTabProps } from "./types";
 
 const DIFFICULTY_OPTIONS = [
@@ -13,7 +13,7 @@ const DIFFICULTY_OPTIONS = [
 ];
 
 export function TabStatement({ detail, update, errors }: EditorTabProps) {
-  const setProblem = (change: Partial<Problem>) => update((d) => ({ problem: { ...d.problem, ...change } }));
+  const setProblem = (change: Partial<ProblemSummary>) => update((d) => ({ problem: { ...d.problem, ...change } }));
   const examples = detail.tests.filter((t) => t.visible);
 
   return (
@@ -61,7 +61,7 @@ export function TabStatement({ detail, update, errors }: EditorTabProps) {
             <SegmentedControl
               aria-label="Poziom trudności"
               value={String(detail.problem.difficulty)}
-              onChange={(v) => setProblem({ difficulty: Number(v) as Problem["difficulty"] })}
+              onChange={(v) => setProblem({ difficulty: Number(v) as ProblemSummary["difficulty"] })}
               options={DIFFICULTY_OPTIONS}
             />
           </div>

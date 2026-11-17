@@ -9,8 +9,10 @@ Pełna specyfikacja: [docs/SPEC.md](docs/SPEC.md).
 ```
 apps/
   web/   Next.js (App Router) + Tailwind + Monaco — panel organizatora i widok testu
-  api/   NestJS + Drizzle (PostgreSQL) + BullMQ (Redis) — moduły: auth, problems, exams,
-         sessions, submissions, integrity
+  api/   NestJS + Drizzle (PostgreSQL) + BullMQ (Redis) — moduły: auth, panel
+         (klasy, bank zadań, testy, wyniki), dalej sessions, submissions, integrity
+packages/
+  contracts/   wspólne typy odpowiedzi i żądań API (tylko typy, bez kodu runtime)
 docs/    specyfikacja projektu
 docker-compose.infra.yml   sama infrastruktura + narzędzia (do `pnpm dev`)
 docker-compose.yml         cały stack: infra (include) + migracje, API, web
@@ -67,6 +69,13 @@ pnpm dev                            # web :3000, api :4000
 pnpm db:down                        # zatrzymanie infrastruktury (dane zostają)
 ```
 
+Dane demonstracyjne panelu (klasy, zadania, testy we wszystkich stanach, prace uczniów z sygnałami) dla istniejącego konta nauczyciela — po zbudowaniu API (`pnpm dev` albo `pnpm --filter api build`):
+
+```bash
+pnpm --filter api db:seed nauczyciel@example.com            # odmówi, jeśli konto ma już dane
+pnpm --filter api db:seed nauczyciel@example.com --reset    # usuwa dane panelu tego konta i wgrywa demo
+```
+
 Oba pliki compose używają tego samego projektu `codeportal`, więc dzielą kontenery i dane. Jeśli działał pełny stack, przed `pnpm dev` zatrzymaj `docker compose stop api web` — zajmują te same porty.
 
 ## Zasady architektury
@@ -81,3 +90,20 @@ Oba pliki compose używają tego samego projektu `codeportal`, więc dzielą kon
 - W serwisach: `@InjectDrizzle() private readonly db: Db` (typ `Db` z `src/db/index.ts`).
 - `editor_events` jest partycjonowana po `ts` — `PARTITION BY RANGE` i partycja domyślna są dopisane ręcznie w `0000_init.sql`, bo drizzle-kit ich nie generuje. Z tego powodu nie używamy `drizzle-kit push`. Partycje dzienne dojdą jako job (albo pg_partman).
 - Podgląd bazy: `pnpm db:studio`.
+
+## API panelu nauczyciela
+
+Wszystkie trasy pod `/panel/*` wymagają sesji (ciasteczko Better Auth) i roli `organizer` lub `admin`; każdy nauczyciel widzi tylko swoje dane. Kształty odpowiedzi i żądań są w `packages/contracts`, walidacja wejścia w `apps/api/src/panel/schemas.ts` (Zod przez `StandardSchemaValidationPipe`).
+
+| Obszar | Trasy |
+| --- | --- |
+| Pulpit | `GET /panel/dashboard` |
+| Klasy | `GET/POST /panel/groups`, `GET /panel/groups/:id`, `POST /panel/groups/:id/students`, `POST …/students/import`, `POST …/students/:studentId/invite`, `DELETE …/students/:studentId` |
+| Bank zadań | `GET/POST /panel/problems`, `GET/PUT /panel/problems/:id` |
+| Testy | `GET/POST /panel/exams`, `GET /panel/exams/:id`, `GET/PUT …/draft`, `POST …/publish`, `POST …/duplicate` |
+| Na żywo | `POST …/time`, `POST …/end`, `POST …/sessions/:sessionId/readmit`, `…/end`, `…/message`, `GET …/sessions/:sessionId/code` |
+| Wyniki | `GET …/results`, `POST …/results/approve`, `GET …/results/:sessionId`, `POST …/review`, `POST …/flag` |
+
+- Status testu (szkic → zaplanowany → trwa → do sprawdzenia → zakończony) wynika z `published_at`, `starts_at`, `ends_at`, `ended_at` i `results_approved_at`, nie jest zapisywany osobno.
+- Ryzyko samodzielności liczy `apps/api/src/panel/exams/risk.ts` z `editor_events` (zablokowane wklejenia, wyjścia z okna, skoki kodu) i `similarity_pairs`.
+- Akcje nauczyciela w trakcie testu (dodany czas, wiadomości, wpuszczenie, zakończenie) trafiają do `teacher_actions` — z tej tabeli będzie czytać widok ucznia.

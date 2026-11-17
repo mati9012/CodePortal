@@ -24,16 +24,15 @@ import { Skeleton } from "@/components/ui/feedback";
 import { Avatar, Kbd } from "@/components/ui/surface";
 import { authClient } from "@/lib/auth-client";
 import { cn } from "@/lib/cn";
-import { EXAMS } from "@/lib/mock/panel";
-
-const toReview = EXAMS.reduce((n, e) => n + (e.toReview ?? 0), 0);
+import type { ExamSummary } from "@codeportal/contracts";
+import { useApi } from "@/lib/api";
 
 const NAV = [
   { href: "/panel", label: "Pulpit", icon: LayoutDashboard, exact: true },
   { href: "/panel/testy", label: "Testy i konkursy", icon: ClipboardList },
   { href: "/panel/zadania", label: "Bank zadań", icon: Library },
   { href: "/panel/klasy", label: "Klasy i grupy", icon: Users },
-  { href: "/panel/wyniki", label: "Wyniki", icon: BarChart3, count: toReview },
+  { href: "/panel/wyniki", label: "Wyniki", icon: BarChart3, countsReviews: true },
   { href: "/panel/ustawienia", label: "Ustawienia", icon: Settings },
 ];
 
@@ -241,9 +240,12 @@ function ActiveNav({ onNavigate }: { onNavigate: () => void }) {
 }
 
 function NavList({ pathname, onNavigate }: { pathname: string | null; onNavigate: () => void }) {
+  const { data: exams } = useApi<ExamSummary[]>("/panel/exams");
+  const toReview = exams?.reduce((n, e) => n + (e.toReview ?? 0), 0);
   return (
     <nav aria-label="Panel" className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-3 py-2">
-      {NAV.map(({ href, label, icon: Icon, exact, count }) => {
+      {NAV.map(({ href, label, icon: Icon, exact, countsReviews }) => {
+        const count = countsReviews ? toReview : undefined;
         const active =
           pathname !== null && (exact ? pathname === href : pathname === href || pathname.startsWith(`${href}/`));
         return (

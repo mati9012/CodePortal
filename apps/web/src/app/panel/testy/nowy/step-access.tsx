@@ -4,8 +4,9 @@ import { KeyRound, Link2, Lock, School } from "lucide-react";
 import { Tag } from "@/components/ui/surface";
 import { SelectionCard, Switch } from "@/components/ui/choice";
 import { Field, Input, TextField } from "@/components/ui/field";
-import { GROUPS } from "@/lib/mock/panel";
-import { PROTECTION_PRESET, type Access, type Protection } from "./draft";
+import type { Access, GroupSummary, Protection } from "@codeportal/contracts";
+import { useApi } from "@/lib/api";
+import { PROTECTION_PRESET } from "./draft";
 import { WizardSection } from "./section";
 import type { StepProps } from "./wizard";
 
@@ -23,7 +24,8 @@ const PROTECTION: { value: Protection; title: string; description: string; featu
 ];
 
 export function StepAccess({ draft, update, errors }: StepProps) {
-  const hasGroup = GROUPS.some((g) => g.id === draft.groupId);
+  const { data: groups = [] } = useApi<GroupSummary[]>("/panel/groups");
+  const hasGroup = groups.some((g) => g.id === draft.groupId);
   return (
     <>
       <WizardSection title="Dostęp" description="Jak uczniowie wejdą do testu. Kod i link dostaniesz po publikacji.">

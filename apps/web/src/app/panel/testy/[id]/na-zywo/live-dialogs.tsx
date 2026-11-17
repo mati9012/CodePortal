@@ -1,5 +1,6 @@
 "use client";
 
+import type { LiveCode, LiveParticipant } from "@codeportal/contracts";
 import { Clock, Code2, MessageSquare, TriangleAlert, X } from "lucide-react";
 import { useState } from "react";
 import { CodeView } from "@/components/panel/code-view";
@@ -9,12 +10,13 @@ import { Button } from "@/components/ui/button";
 import { Input, Select, TextField, TextareaField } from "@/components/ui/field";
 import { SegmentedControl } from "@/components/ui/tabs";
 import { cn } from "@/lib/cn";
-import { REPLAY, type LiveParticipant } from "@/lib/mock/exam-session";
+import { useApi } from "@/lib/api";
 
 const MINUTE_PRESETS = [5, 10, 15];
 const DEFAULT_EXTRA_MIN = 10;
 const MAX_EXTRA_MIN = 120;
 const END_CONFIRMATION = "ZAKOŃCZ";
+const CODE_REFRESH_MS = 5000;
 
 export function AddTimeDialog({
   open,
@@ -269,7 +271,7 @@ export function MessageDialog({
 }: {
   participant: LiveParticipant;
   onClose: () => void;
-  onSend: () => void;
+  onSend: (text: string) => void;
 }) {
   const [text, setText] = useState("");
   return (
@@ -285,7 +287,7 @@ export function MessageDialog({
           <Button variant="secondary" onClick={onClose}>
             Anuluj
           </Button>
-          <Button disabled={!text.trim()} onClick={onSend}>
+          <Button disabled={!text.trim()} onClick={() => onSend(text.trim())}>
             Wyślij
           </Button>
         </>
@@ -296,7 +298,19 @@ export function MessageDialog({
   );
 }
 
-export function LiveCodeDialog({ participant, onClose }: { participant: LiveParticipant; onClose: () => void }) {
+export function LiveCodeDialog({
+  examId,
+  participant,
+  onClose,
+}: {
+  examId: string;
+  participant: LiveParticipant;
+  onClose: () => void;
+}) {
+  const { data, error } = useApi<LiveCode>(`/panel/exams/${examId}/sessions/${participant.sessionId}/code`, {
+    refreshInterval: CODE_REFRESH_MS,
+  });
+  const problem = data?.problemNumber ?? participant.activeProblem;
   return (
     <Dialog
       open
@@ -305,10 +319,18 @@ export function LiveCodeDialog({ participant, onClose }: { participant: LivePart
       iconTone="info"
       className="max-w-2xl"
       title={participant.name}
-      description={`Zadanie ${participant.activeProblem ?? 1} · podgląd tylko do odczytu, odświeża się co kilka sekund.`}
+      description={`${problem ? `Zadanie ${problem} · ` : ""}podgląd tylko do odczytu, odświeża się co kilka sekund.`}
       footer={<Button onClick={onClose}>Zamknij</Button>}
     >
-      <CodeView code={REPLAY.code} />
+      {error ? (
+        <p className="text-body text-danger-ink">{error.message}</p>
+      ) : !data ? (
+        <p className="text-body text-ink-2">Wczytywanie kodu…</p>
+      ) : data.code ? (
+        <CodeView code={data.code} />
+      ) : (
+        <p className="text-body text-ink-2">Uczeń nie napisał jeszcze żadnego kodu.</p>
+      )}
     </Dialog>
   );
 }

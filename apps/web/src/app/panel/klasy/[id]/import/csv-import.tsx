@@ -1,22 +1,24 @@
 "use client";
 
+import type { GroupDetail, ImportResult, StudentInput } from "@codeportal/contracts";
 import { FileSpreadsheet, FileText, Upload } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useRef, useState, type DragEvent } from "react";
 import { Bit } from "@/components/brand/bit";
 import { PageHeader } from "@/components/panel/page-header";
+import { QueryView } from "@/components/panel/query-view";
 import { Button, buttonClasses } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/choice";
 import { Banner } from "@/components/ui/feedback";
 import { Select } from "@/components/ui/field";
 import { Stepper, type StepState } from "@/components/ui/stepper";
 import { Card, Tag } from "@/components/ui/surface";
+import { api, errorMessage, useApi } from "@/lib/api";
 import { cn } from "@/lib/cn";
 import { parseCsv, type CsvTable } from "@/lib/csv";
 import { isValidEmail } from "@/lib/email";
 import { pluralPl } from "@/lib/plural";
-import { groupRoster, SAMPLE_CSV } from "@/lib/mock/class-roster";
-import type { Group } from "@/lib/mock/panel";
+import { SAMPLE_CSV, SAMPLE_CSV_NAME } from "./sample-csv";
 
 type Field = "lastName" | "firstName" | "email" | "skip";
 
@@ -58,13 +60,32 @@ function guessMapping(header: string[]): Field[] {
   return header.map((h) => HEADER_GUESS.find(([pattern]) => pattern.test(h))?.[1] ?? "skip");
 }
 
-export function CsvImport({ group }: { group: Group }) {
+export function CsvImportView({ id }: { id: string }) {
+  const query = useApi<GroupDetail>(`/panel/groups/${id}`);
+  return <QueryView query={query}>{(detail) => <CsvImport detail={detail} reload={() => query.mutate()} />}</QueryView>;
+}
+
+function CsvImport({ detail, reload }: { detail: GroupDetail; reload: () => Promise<unknown> }) {
+  const { group } = detail;
   const [step, setStep] = useState(0);
   const [file, setFile] = useState<SourceFile | null>(null);
   const [hasHeader, setHasHeader] = useState(true);
   const [mapping, setMapping] = useState<Field[]>([]);
   const [readError, setReadError] = useState<string | null>(null);
-  const [imported, setImported] = useState({ count: 0, invited: 0 });
+  const [imported, setImported] = useState<ImportResult>({ imported: 0, invited: 0, skipped: 0 });
+  const [importError, setImportError] = useState<string | null>(null);
+
+  const importStudents = async (students: StudentInput[]) => {
+    try {
+      const result = await api<ImportResult>(`/panel/groups/${group.id}/students/import`, { body: { students } });
+      await reload();
+      setImportError(null);
+      setImported(result);
+      setStep(2);
+    } catch (err) {
+      setImportError(errorMessage(err));
+    }
+  };
 
   const load = (name: string, text: string) => {
     const table = parseCsv(text);
@@ -95,23 +116,21 @@ export function CsvImport({ group }: { group: Group }) {
       {step === 0 && <FileStep error={readError} onLoad={load} onError={setReadError} />}
       {step === 1 && file && (
         <MappingStep
-          group={group}
+          detail={detail}
+          error={importError}
           file={file}
           hasHeader={hasHeader}
           setHasHeader={setHasHeader}
           mapping={mapping}
           setMapping={setMapping}
           onBack={() => setStep(0)}
-          onImport={(count, invited) => {
-            setImported({ count, invited });
-            setStep(2);
-          }}
+          onImport={importStudents}
         />
       )}
       {step === 2 && (
         <Card className="flex flex-col items-center gap-3 px-6 py-10 text-center">
           <Bit size="l" />
-          <h2 className="font-display text-h2 text-ink">Zaimportowano {imported.count} {pluralPl(imported.count, "ucznia", "uczniów", "uczniów")}</h2>
+          <h2 className="font-display text-h2 text-ink">Zaimportowano {imported.imported} {pluralPl(imported.imported, "ucznia", "uczniów", "uczniów")}</h2>
           <p className="max-w-md text-body text-ink-2">
             {imported.invited > 0
               ? `${imported.invited} z nich dostało zaproszenie e-mailem. Pozostali dołączą do testów kodem.`
@@ -201,7 +220,7 @@ function FileStep({
       <div className="flex flex-wrap items-center gap-3 text-[13px] text-ink-2">
         <FileSpreadsheet className="size-4" aria-hidden />
         Nie masz pliku pod ręką?
-        <Button variant="secondary" size="sm" icon={<FileText />} onClick={() => onLoad("3B_librus_eksport.csv", SAMPLE_CSV)}>
+        <Button variant="secondary" size="sm" icon={<FileText />} onClick={() => onLoad(SAMPLE_CSV_NAME, SAMPLE_CSV)}>
           Użyj przykładowego pliku
         </Button>
       </div>
@@ -210,7 +229,8 @@ function FileStep({
 }
 
 function MappingStep({
-  group,
+  detail,
+  error,
   file,
   hasHeader,
   setHasHeader,
@@ -219,18 +239,20 @@ function MappingStep({
   onBack,
   onImport,
 }: {
-  group: Group;
+  detail: GroupDetail;
+  error: string | null;
   file: SourceFile;
   hasHeader: boolean;
   setHasHeader: (v: boolean) => void;
   mapping: Field[];
   setMapping: (m: Field[]) => void;
   onBack: () => void;
-  onImport: (count: number, invited: number) => void;
+  onImport: (students: StudentInput[]) => Promise<void>;
 }) {
+  const [importing, setImporting] = useState(false);
   const existing = useMemo(
-    () => new Set(groupRoster(group).map((s) => `${s.lastName} ${s.firstName}`.toLowerCase())),
-    [group],
+    () => new Set(detail.students.map((s) => `${s.lastName} ${s.firstName}`.toLowerCase())),
+    [detail.students],
   );
   const dataRows = hasHeader ? file.table.rows.slice(1) : file.table.rows;
   const columns = Math.max(...file.table.rows.map((r) => r.length));
@@ -243,7 +265,7 @@ function MappingStep({
     const firstName = cells[column("firstName")] ?? "";
     const email = column("email") === -1 ? "" : (cells[column("email")] ?? "");
     const status = rowStatus(lastName, firstName, email, existing);
-    return { cells, status, email };
+    return { cells, status, firstName, lastName, email };
   });
 
   const importable = rows.filter((r) => ROW_STATUS[r.status].imported);
@@ -338,6 +360,12 @@ function MappingStep({
         </table>
       </Card>
 
+      {error && (
+        <Banner tone="danger" title="Nie zaimportowano.">
+          {error}
+        </Banner>
+      )}
+
       {problems.length > 0 && namesMapped && (
         <Banner tone="warning" title={`${problems.length} ${pluralPl(problems.length, "wiersz wymaga", "wiersze wymagają", "wierszy wymaga")} uwagi.`}>
           {problems.map((p) => `Wiersz ${p.line}: ${ROW_STATUS[p.status].label.toLowerCase()}`).join(". ")}. Te wiersze zostaną
@@ -354,8 +382,12 @@ function MappingStep({
             Wstecz
           </Button>
           <Button
-            disabled={!namesMapped || mappedTwice.length > 0 || importable.length === 0}
-            onClick={() => onImport(importable.length, importable.filter((r) => r.email).length)}
+            disabled={importing || !namesMapped || mappedTwice.length > 0 || importable.length === 0}
+            onClick={async () => {
+              setImporting(true);
+              await onImport(importable.map((r) => ({ firstName: r.firstName, lastName: r.lastName, email: r.email || undefined })));
+              setImporting(false);
+            }}
           >
             Importuj {importable.length} {pluralPl(importable.length, "ucznia", "uczniów", "uczniów")}
           </Button>

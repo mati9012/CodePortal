@@ -4,7 +4,8 @@ import { ClipboardCheck, Trophy } from "lucide-react";
 import { SelectionCard } from "@/components/ui/choice";
 import { Field, Input, SelectField, TextareaField, TextField } from "@/components/ui/field";
 import { cn } from "@/lib/cn";
-import { GROUPS } from "@/lib/mock/panel";
+import type { GroupSummary } from "@codeportal/contracts";
+import { useApi } from "@/lib/api";
 import { WizardSection } from "./section";
 import type { StepProps } from "./wizard";
 
@@ -15,6 +16,7 @@ const DURATIONS = [
 ];
 
 export function StepBasics({ draft, update, errors }: StepProps) {
+  const { data: groups = [] } = useApi<GroupSummary[]>("/panel/groups");
   return (
     <>
       <WizardSection title="Podstawy" description="Nazwę i instrukcję uczniowie zobaczą przed rozpoczęciem testu.">
@@ -70,7 +72,7 @@ export function StepBasics({ draft, update, errors }: StepProps) {
         <div className="grid gap-5 sm:grid-cols-2">
           <SelectField label="Klasa lub grupa" value={draft.groupId} onChange={(e) => update({ groupId: e.target.value })} className="sm:col-span-2">
             <option value="">Bez klasy — wejście tylko kodem</option>
-            {GROUPS.map((g) => (
+            {groups.map((g) => (
               <option key={g.id} value={g.id}>
                 {g.name} · {g.students} uczniów
               </option>

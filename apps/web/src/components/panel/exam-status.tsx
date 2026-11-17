@@ -1,6 +1,7 @@
 import { Tag, type TagTone } from "@/components/ui/surface";
 import { cn } from "@/lib/cn";
-import { EXAM_STATUS_LABEL, type ExamStatus } from "@/lib/mock/panel";
+import type { ExamStatus } from "@codeportal/contracts";
+import { EXAM_STATUS_LABEL } from "@/lib/panel-labels";
 
 const TONE: Record<ExamStatus, TagTone> = {
   live: "success",

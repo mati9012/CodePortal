@@ -1,4 +1,4 @@
-import type { ProblemDetail } from "@/lib/mock/problem-detail";
+import type { ProblemDetail } from "@codeportal/contracts";
 
 export type EditorTabProps = {
   detail: ProblemDetail;

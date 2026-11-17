@@ -2,7 +2,8 @@
 
 import { Select } from "@/components/ui/field";
 import { Card } from "@/components/ui/surface";
-import { LANGUAGE_LABEL, type Language } from "@/lib/mock/panel";
+import type { Language } from "@codeportal/contracts";
+import { LANGUAGE_LABEL } from "@/lib/panel-labels";
 import type { EditorTabProps } from "./types";
 
 export function TabReference({ detail, update }: EditorTabProps) {

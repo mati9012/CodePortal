@@ -1,16 +1,19 @@
 "use client";
 
+import type { ProblemDetail, ProblemInput } from "@codeportal/contracts";
 import { CircleCheck, Eye, TriangleAlert } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Dialog } from "@/components/panel/dialog";
 import { formatTime } from "@/components/panel/format";
 import { Breadcrumbs } from "@/components/panel/page-header";
+import { QueryView } from "@/components/panel/query-view";
 import { useToast } from "@/components/panel/use-toast";
 import { Button } from "@/components/ui/button";
 import { Banner } from "@/components/ui/feedback";
 import { Tag } from "@/components/ui/surface";
 import { Tabs } from "@/components/ui/tabs";
-import type { ProblemDetail } from "@/lib/mock/problem-detail";
+import { api, errorMessage, useApi } from "@/lib/api";
 import { TabReference } from "./tab-reference";
 import { TabSettings } from "./tab-settings";
 import { TabStatement } from "./tab-statement";
@@ -30,11 +33,31 @@ function validate(d: ProblemDetail): EditorTabProps["errors"] {
 
 const ERROR_TAB: Record<keyof EditorTabProps["errors"], Tab> = { title: "statement", statement: "statement", weights: "tests" };
 
+function toInput({ problem, ...rest }: ProblemDetail): ProblemInput {
+  return {
+    ...rest,
+    title: problem.title.trim(),
+    type: problem.type,
+    languages: problem.languages,
+    tags: problem.tags,
+    difficulty: problem.difficulty,
+    points: problem.points,
+  };
+}
+
+export function ProblemEditorView({ id }: { id: string }) {
+  const query = useApi<ProblemDetail>(`/panel/problems/${id}`, { revalidateOnFocus: false });
+  return <QueryView query={query}>{(detail) => <ProblemEditor key={id} initial={detail} />}</QueryView>;
+}
+
 export function ProblemEditor({ initial, isNew = false }: { initial: ProblemDetail; isNew?: boolean }) {
+  const router = useRouter();
   const [detail, setDetail] = useState(initial);
   const [tab, setTab] = useState<Tab>("statement");
   const [errors, setErrors] = useState<EditorTabProps["errors"]>({});
-  const [savedAt, setSavedAt] = useState<string | null>(isNew ? null : "14:02");
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [savedAt, setSavedAt] = useState<string | null>(isNew ? null : formatTime(initial.problem.updatedAt));
   const [dirty, setDirty] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const { show, toast } = useToast();
@@ -45,7 +68,7 @@ export function ProblemEditor({ initial, isNew = false }: { initial: ProblemDeta
     setErrors({});
   };
 
-  const save = () => {
+  const save = async () => {
     const found = validate(detail);
     setErrors(found);
     const first = Object.keys(found)[0] as keyof typeof found | undefined;
@@ -53,14 +76,26 @@ export function ProblemEditor({ initial, isNew = false }: { initial: ProblemDeta
       setTab(ERROR_TAB[first]);
       return;
     }
-    setSavedAt(formatTime(new Date()));
-    setDirty(false);
-    show(isNew ? "Dodano zadanie do banku" : "Zapisano zmiany", detail.problem.title);
+    setSaving(true);
+    try {
+      const saved = isNew
+        ? await api<ProblemDetail>("/panel/problems", { body: toInput(detail) })
+        : await api<ProblemDetail>(`/panel/problems/${detail.problem.id}`, { method: "PUT", body: toInput(detail) });
+      setDetail(saved);
+      setSavedAt(formatTime(saved.problem.updatedAt));
+      setDirty(false);
+      setSaveError(null);
+      show(isNew ? "Dodano zadanie do banku" : "Zapisano zmiany", saved.problem.title);
+      if (isNew) router.replace(`/panel/zadania/${saved.problem.id}`);
+    } catch (err) {
+      setSaveError(errorMessage(err));
+    }
+    setSaving(false);
   };
 
   const checked = detail.tests.filter((t) => t.referenceMs !== undefined).length;
   const title = detail.problem.title.trim() || (isNew ? "Nowe zadanie" : "Bez tytułu");
-  const firstError = Object.values(errors)[0];
+  const firstError = Object.values(errors)[0] ?? saveError;
 
   return (
     <>
@@ -82,7 +117,9 @@ export function ProblemEditor({ initial, isNew = false }: { initial: ProblemDeta
           <Button variant="secondary" icon={<Eye />} onClick={() => setPreviewOpen(true)}>
             Podgląd jako uczeń
           </Button>
-          <Button onClick={save}>Zapisz</Button>
+          <Button onClick={save} disabled={saving}>
+            Zapisz
+          </Button>
         </div>
       </div>
 

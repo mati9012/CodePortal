@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { emptyProblemDetail } from "@/lib/mock/problem-detail";
+import { emptyProblemDetail } from "../_editor/empty-problem";
 import { ProblemEditor } from "../_editor/problem-editor";
 
 export const metadata: Metadata = { title: "Nowe zadanie · CodePortal" };

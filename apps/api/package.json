@@ -25,6 +25,7 @@
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
     "db:migrate:prod": "node dist/db/migrate.js",
+    "db:seed": "node --env-file-if-exists=.env dist/db/seed.js",
     "email:dev": "email dev --dir src/emails --port 3030"
   },
   "dependencies": {
@@ -44,9 +45,11 @@
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.1"
+    "rxjs": "^7.8.1",
+    "zod": "4.6.7"
   },
   "devDependencies": {
+    "@codeportal/contracts": "workspace:*",
     "@nestjs/cli": "^12.0.0",
     "@nestjs/mau": "^0.2.6",
     "@nestjs/schematics": "^12.0.0",

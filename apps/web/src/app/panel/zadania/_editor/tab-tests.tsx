@@ -11,7 +11,7 @@ import { Banner } from "@/components/ui/feedback";
 import { Input, Select, TextField, TextareaField } from "@/components/ui/field";
 import { Card } from "@/components/ui/surface";
 import { cn } from "@/lib/cn";
-import type { TestCase } from "@/lib/mock/problem-detail";
+import type { TestCase } from "@codeportal/contracts";
 import type { EditorTabProps } from "./types";
 
 const DT_TEST = "application/x-cp-test";

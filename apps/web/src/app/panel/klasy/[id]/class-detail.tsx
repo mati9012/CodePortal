@@ -1,5 +1,6 @@
 "use client";
 
+import type { AccountState, ExamSummary, GroupDetail, Student, StudentInput } from "@codeportal/contracts";
 import { Plus, Upload } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
@@ -8,6 +9,7 @@ import { Dialog } from "@/components/panel/dialog";
 import { ExamStatusTag } from "@/components/panel/exam-status";
 import { formatDay } from "@/components/panel/format";
 import { PageHeader } from "@/components/panel/page-header";
+import { QueryView } from "@/components/panel/query-view";
 import { useToast } from "@/components/panel/use-toast";
 import { Button, buttonClasses } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -15,27 +17,64 @@ import { TextField } from "@/components/ui/field";
 import { Avatar, Card, Tag, type TagTone } from "@/components/ui/surface";
 import { Tabs } from "@/components/ui/tabs";
 import { cn } from "@/lib/cn";
+import { api, errorMessage, useApi } from "@/lib/api";
 import { isValidEmail } from "@/lib/email";
-import { ACCOUNT_LABEL, groupExams, groupRoster, type AccountState, type Student } from "@/lib/mock/class-roster";
-import type { Group } from "@/lib/mock/panel";
+import { ACCOUNT_LABEL } from "@/lib/panel-labels";
+import { pluralPl } from "@/lib/plural";
 
 const ACCOUNT_TONE: Record<AccountState, TagTone> = { linked: "success", invited: "accent", none: "neutral" };
+const GOOD_AVERAGE = 70;
+const PASSING_AVERAGE = 50;
 
 type Tab = "students" | "exams" | "averages";
 
-export function ClassDetail({ group }: { group: Group }) {
-  const [students, setStudents] = useState(() => groupRoster(group));
+export function ClassDetailView({ id }: { id: string }) {
+  const query = useApi<GroupDetail>(`/panel/groups/${id}`);
+  return <QueryView query={query}>{(detail) => <ClassDetail detail={detail} reload={() => query.mutate()} />}</QueryView>;
+}
+
+function ClassDetail({ detail, reload }: { detail: GroupDetail; reload: () => Promise<unknown> }) {
+  const { group, students, exams } = detail;
   const [tab, setTab] = useState<Tab>("students");
   const [adding, setAdding] = useState(false);
   const [removing, setRemoving] = useState<Student | null>(null);
   const { show, toast } = useToast();
-  const exams = groupExams(group);
+  const studentsPath = `/panel/groups/${group.id}/students`;
+
+  const run = async (action: () => Promise<unknown>, success: [string, string?], failure: string) => {
+    try {
+      await action();
+      await reload();
+      show(...success);
+      return true;
+    } catch (err) {
+      show(failure, errorMessage(err), "warning");
+      return false;
+    }
+  };
+
+  const invite = (s: Student) =>
+    run(() => api(`${studentsPath}/${s.id}/invite`, { method: "POST" }), ["Wysłano zaproszenie", s.email ?? undefined], "Nie wysłano zaproszenia");
+
+  const add = async (input: StudentInput) => {
+    const added = await run(
+      () => api<Student>(studentsPath, { body: input }),
+      [`Dodano: ${input.firstName} ${input.lastName}`, input.email ? "Zaproszenie wysłane na e-mail." : undefined],
+      "Nie dodano ucznia",
+    );
+    if (added) setAdding(false);
+  };
+
+  const remove = async (s: Student) => {
+    setRemoving(null);
+    await run(() => api(`${studentsPath}/${s.id}`, { method: "DELETE" }), [`Usunięto z klasy: ${s.firstName} ${s.lastName}`], "Nie usunięto ucznia");
+  };
 
   return (
     <>
       <PageHeader
         title={group.name}
-        description={`${group.kind === "class" ? "Klasa" : "Grupa"} · rok szkolny ${group.year} · ${students.length} uczniów`}
+        description={`${group.kind === "class" ? "Klasa" : "Grupa"} · rok szkolny ${group.year} · ${students.length} ${pluralPl(students.length, "uczeń", "uczniów", "uczniów")}`}
         crumbs={[{ href: "/panel/klasy", label: "Klasy i grupy" }]}
         actions={
           <>
@@ -45,7 +84,7 @@ export function ClassDetail({ group }: { group: Group }) {
             <Button variant="secondary" icon={<Plus />} onClick={() => setAdding(true)}>
               Dodaj ucznia
             </Button>
-            <Link href="/panel/testy/nowy" className={buttonClasses()}>
+            <Link href={`/panel/testy/nowy?group=${group.id}`} className={buttonClasses()}>
               Nowy test dla klasy
             </Link>
           </>
@@ -107,7 +146,7 @@ export function ClassDetail({ group }: { group: Group }) {
                         {ACCOUNT_LABEL[s.account]}
                       </Tag>
                     </td>
-                    <td className="px-3 py-2 text-right tabular-nums text-ink">{s.exams ? `${s.average}%` : "—"}</td>
+                    <td className="px-3 py-2 text-right tabular-nums text-ink">{s.average === null ? "—" : `${s.average}%`}</td>
                     <td className="px-3 py-2 text-right tabular-nums text-ink">{s.exams}</td>
                     <td className="px-3 py-2 text-right">
                       <ActionMenu
@@ -116,10 +155,7 @@ export function ClassDetail({ group }: { group: Group }) {
                           {
                             label: s.account === "invited" ? "Wyślij zaproszenie ponownie" : "Wyślij zaproszenie",
                             hidden: s.account === "linked" || !s.email,
-                            onSelect: () => {
-                              setStudents((list) => list.map((x) => (x.id === s.id ? { ...x, account: "invited" } : x)));
-                              show("Wysłano zaproszenie", s.email);
-                            },
+                            onSelect: () => invite(s),
                           },
                           { label: "Usuń z klasy…", danger: true, onSelect: () => setRemoving(s) },
                         ]}
@@ -138,7 +174,7 @@ export function ClassDetail({ group }: { group: Group }) {
             <EmptyState
               title="Brak testów dla tej klasy"
               action={
-                <Link href="/panel/testy/nowy" className={buttonClasses()}>
+                <Link href={`/panel/testy/nowy?group=${group.id}`} className={buttonClasses()}>
                   Nowy test
                 </Link>
               }
@@ -165,13 +201,7 @@ export function ClassDetail({ group }: { group: Group }) {
       {adding && (
         <AddStudentDialog
           onClose={() => setAdding(false)}
-          onAdd={(student) => {
-            setStudents((list) =>
-              [...list, student].sort((a, b) => a.lastName.localeCompare(b.lastName, "pl")),
-            );
-            setAdding(false);
-            show(`Dodano: ${student.firstName} ${student.lastName}`, student.email ? "Zaproszenie wysłane na e-mail." : undefined);
-          }}
+          onAdd={add}
         />
       )}
       <Dialog
@@ -185,14 +215,7 @@ export function ClassDetail({ group }: { group: Group }) {
             <Button variant="secondary" onClick={() => setRemoving(null)}>
               Anuluj
             </Button>
-            <Button
-              variant="danger"
-              onClick={() => {
-                setStudents((list) => list.filter((x) => x.id !== removing?.id));
-                show(`Usunięto z klasy: ${removing?.firstName} ${removing?.lastName}`);
-                setRemoving(null);
-              }}
-            >
+            <Button variant="danger" onClick={() => removing && remove(removing)}>
               Usuń
             </Button>
           </>
@@ -203,7 +226,7 @@ export function ClassDetail({ group }: { group: Group }) {
   );
 }
 
-function Averages({ exams }: { exams: ReturnType<typeof groupExams> }) {
+function Averages({ exams }: { exams: ExamSummary[] }) {
   if (exams.length === 0) {
     return (
       <Card>
@@ -221,7 +244,7 @@ function Averages({ exams }: { exams: ReturnType<typeof groupExams> }) {
           </div>
           <span className="relative h-2 overflow-hidden rounded-full bg-line">
             <span
-              className={cn("absolute inset-y-0 left-0 rounded-full", e.average! >= 70 ? "bg-success" : e.average! >= 50 ? "bg-warning" : "bg-danger")}
+              className={cn("absolute inset-y-0 left-0 rounded-full", e.average! >= GOOD_AVERAGE ? "bg-success" : e.average! >= PASSING_AVERAGE ? "bg-warning" : "bg-danger")}
               style={{ width: `${e.average}%` }}
             />
           </span>
@@ -231,10 +254,11 @@ function Averages({ exams }: { exams: ReturnType<typeof groupExams> }) {
   );
 }
 
-function AddStudentDialog({ onClose, onAdd }: { onClose: () => void; onAdd: (s: Student) => void }) {
+function AddStudentDialog({ onClose, onAdd }: { onClose: () => void; onAdd: (s: StudentInput) => Promise<void> }) {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
+  const [saving, setSaving] = useState(false);
   const emailInvalid = email.trim() !== "" && !isValidEmail(email);
   const valid = firstName.trim() && lastName.trim() && !emailInvalid;
   return (
@@ -249,18 +273,12 @@ function AddStudentDialog({ onClose, onAdd }: { onClose: () => void; onAdd: (s: 
             Anuluj
           </Button>
           <Button
-            disabled={!valid}
-            onClick={() =>
-              onAdd({
-                id: crypto.randomUUID(),
-                firstName: firstName.trim(),
-                lastName: lastName.trim(),
-                email: email.trim() || undefined,
-                account: email.trim() ? "invited" : "none",
-                average: 0,
-                exams: 0,
-              })
-            }
+            disabled={!valid || saving}
+            onClick={async () => {
+              setSaving(true);
+              await onAdd({ firstName: firstName.trim(), lastName: lastName.trim(), email: email.trim() || undefined });
+              setSaving(false);
+            }}
           >
             Dodaj
           </Button>

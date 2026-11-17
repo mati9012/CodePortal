@@ -4,7 +4,9 @@ import { CircleAlert, CircleCheck } from "lucide-react";
 import { SelectionCard } from "@/components/ui/choice";
 import { SelectField } from "@/components/ui/field";
 import { cn } from "@/lib/cn";
-import { GRADES, problemById, totalPoints, type ResultsVisibility } from "./draft";
+import type { ResultsVisibility } from "@codeportal/contracts";
+import { pluralPl } from "@/lib/plural";
+import { GRADES, totalPoints, useProblemBank } from "./draft";
 import { WizardSection } from "./section";
 import type { StepProps } from "./wizard";
 
@@ -17,13 +19,14 @@ const VISIBILITY: { value: ResultsVisibility; title: string; description: string
 const GRADE_COLOR = ["bg-danger", "bg-orange", "bg-warning", "bg-success/70", "bg-success", "bg-accent"];
 
 export function StepGrading({ draft, update, errors }: StepProps) {
+  const { problemById } = useProblemBank();
   const max = totalPoints(draft.items);
   const t = draft.thresholds;
   const bounds = [0, ...t, 100];
   const needsManual = draft.items.some((i) =>
     (i.kind === "problem" ? [i.id] : i.ids).some((id) => {
       const p = problemById(id);
-      return p.type === "web" && p.tests === 0;
+      return p?.type === "web" && p.tests === 0;
     }),
   );
 
@@ -34,7 +37,7 @@ export function StepGrading({ draft, update, errors }: StepProps) {
   };
 
   const checks = [
-    { ok: true, text: `${draft.items.length} ${draft.items.length === 1 ? "zadanie" : "zadania"} · ${max} pkt` },
+    { ok: true, text: `${draft.items.length} ${pluralPl(draft.items.length, "zadanie", "zadania", "zadań")} · ${max} pkt` },
     { ok: !needsManual, text: needsManual ? "Zadanie WWW bez testów — ocenisz je ręcznie po teście" : "Wszystkie zadania oceniają się automatycznie" },
     { ok: draft.results !== "immediate" || !needsManual, text: draft.results === "immediate" && needsManual ? "Wynik „od razu” nie obejmie oceny ręcznej" : "Widoczność wyników pasuje do zadań" },
   ];

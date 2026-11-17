@@ -1,5 +1,6 @@
 "use client";
 
+import type { ExamProblem, ExamResults, ResultRow } from "@codeportal/contracts";
 import { ChevronDown, Search } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
@@ -9,26 +10,19 @@ import { Dialog } from "@/components/panel/dialog";
 import { ExamStatusTag } from "@/components/panel/exam-status";
 import { GradeHistogram } from "@/components/panel/grade-histogram";
 import { PageHeader } from "@/components/panel/page-header";
+import { ReviewStatusTag } from "@/components/panel/review-status";
+import { QueryView } from "@/components/panel/query-view";
 import { useToast } from "@/components/panel/use-toast";
 import { Button } from "@/components/ui/button";
 import { Banner } from "@/components/ui/feedback";
 import { Input } from "@/components/ui/field";
-import { Card, StatCard, Tag, type TagTone } from "@/components/ui/surface";
+import { Card, StatCard } from "@/components/ui/surface";
 import { SegmentedControl } from "@/components/ui/tabs";
 import { cn } from "@/lib/cn";
+import { api, errorMessage, useApi } from "@/lib/api";
+import { gradeFor } from "@/lib/panel-labels";
 import { pluralPl } from "@/lib/plural";
-import {
-  examMaxPoints,
-  examProblems,
-  examResults,
-  gradeFor,
-  REVIEW_STATUS_LABEL,
-  type ResultRow,
-  type ReviewStatus,
-} from "@/lib/mock/exam-session";
-import type { Exam } from "@/lib/mock/panel";
-
-const REVIEW_TONE: Record<ReviewStatus, TagTone> = { approved: "success", flagged: "danger", pending: "warning" };
+import { downloadCsv, gradebookText, resultsCsv } from "./export";
 
 type SortKey = "total" | "risk" | "name";
 
@@ -48,11 +42,15 @@ function median(values: number[]) {
 
 const formatOneDecimal = (n: number) => n.toLocaleString("pl-PL", { maximumFractionDigits: 1 });
 
-export function ResultsView({ exam }: { exam: Exam }) {
-  const problems = examProblems(exam);
-  const maxPoints = examMaxPoints(exam);
-  const results = useMemo(() => examResults(exam), [exam]);
-  const [approved, setApproved] = useState(exam.status === "finished");
+export function ResultsView({ id }: { id: string }) {
+  const query = useApi<ExamResults>(`/panel/exams/${id}/results`);
+  return <QueryView query={query}>{(data) => <ResultsBoard data={data} reload={() => query.mutate()} />}</QueryView>;
+}
+
+function ResultsBoard({ data, reload }: { data: ExamResults; reload: () => Promise<unknown> }) {
+  const { exam, problems, thresholds, approved } = data;
+  const results = data.rows;
+  const maxPoints = problems.reduce((n, p) => n + p.max, 0);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [flaggedOnly, setFlaggedOnly] = useState(false);
   const [query, setQuery] = useState("");
@@ -62,8 +60,8 @@ export function ResultsView({ exam }: { exam: Exam }) {
   const rows = useMemo(() => {
     const withTotals = results.map((r) => {
       const total = r.scores.reduce((n, s) => n + s, 0);
-      const percent = Math.round((total / maxPoints) * 100);
-      return { ...r, total, percent, grade: gradeFor(percent) };
+      const percent = maxPoints ? Math.round((total / maxPoints) * 100) : 0;
+      return { ...r, total, percent, grade: gradeFor(percent, thresholds) };
     });
     const q = query.trim().toLowerCase();
     const compare: Record<SortKey, (a: (typeof withTotals)[number], b: (typeof withTotals)[number]) => number> = {
@@ -74,13 +72,33 @@ export function ResultsView({ exam }: { exam: Exam }) {
     return withTotals
       .filter((r) => (!flaggedOnly || r.review === "flagged") && (!q || r.name.toLowerCase().includes(q)))
       .sort(compare[sort]);
-  }, [results, maxPoints, query, flaggedOnly, sort]);
+  }, [results, maxPoints, thresholds, query, flaggedOnly, sort]);
 
-  const percents = results.map((r) => (r.scores.reduce((n, s) => n + s, 0) / maxPoints) * 100);
-  const average = percents.reduce((n, p) => n + p, 0) / percents.length;
+  const percents = results.map((r) => (maxPoints ? (r.scores.reduce((n, s) => n + s, 0) / maxPoints) * 100 : 0));
+  const average = percents.length ? percents.reduce((n, p) => n + p, 0) / percents.length : 0;
   const hardest = problems
-    .map((p, i) => ({ ...p, avg: results.reduce((n, r) => n + r.scores[i]! / p.max, 0) / results.length }))
-    .sort((a, b) => a.avg - b.avg)[0]!;
+    .map((p, i) => ({ ...p, avg: results.length && p.max ? results.reduce((n, r) => n + r.scores[i]! / p.max, 0) / results.length : 0 }))
+    .sort((a, b) => a.avg - b.avg)[0];
+
+  const approve = async () => {
+    setConfirmOpen(false);
+    try {
+      await api(`/panel/exams/${exam.id}/results/approve`, { method: "POST" });
+      await reload();
+      show("Wyniki zatwierdzone", "Uczniowie zobaczą je po zalogowaniu.");
+    } catch (err) {
+      show("Nie udało się zatwierdzić wyników", errorMessage(err), "warning");
+    }
+  };
+
+  const copyGradebook = async () => {
+    try {
+      await navigator.clipboard.writeText(gradebookText(rows));
+      show("Skopiowano oceny", "Wklej je w dzienniku elektronicznym.");
+    } catch {
+      show("Nie udało się skopiować", "Przeglądarka zablokowała schowek.", "warning");
+    }
+  };
   const flagged = results.filter((r) => r.review === "flagged").length;
   const highRisk = results.filter((r) => riskLevel(r.risk) === "high").length;
   const pending = results.filter((r) => r.review === "pending").length;
@@ -108,9 +126,8 @@ export function ResultsView({ exam }: { exam: Exam }) {
                 </Button>
               )}
               actions={[
-                { label: "Plik CSV", onSelect: () => show("Pobieranie CSV", `${exam.title}.csv`) },
-                { label: "Arkusz Excel (.xlsx)", onSelect: () => show("Pobieranie arkusza", `${exam.title}.xlsx`) },
-                { label: "Oceny do dziennika", onSelect: () => show("Skopiowano oceny", "Wklej je w dzienniku elektronicznym.") },
+                { label: "Plik CSV", onSelect: () => downloadCsv(`${exam.title}.csv`, resultsCsv(problems, rows)) },
+                { label: "Oceny do dziennika", onSelect: copyGradebook },
               ]}
             />
             {!approved && exam.status !== "live" && <Button onClick={() => setConfirmOpen(true)}>Zatwierdź i pokaż wyniki uczniom</Button>}
@@ -142,7 +159,11 @@ export function ResultsView({ exam }: { exam: Exam }) {
       <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-[repeat(4,minmax(0,1fr))_minmax(0,1.4fr)]">
         <StatCard label="Średnia" value={formatOneDecimal(average)} note="/ 100 pkt" />
         <StatCard label="Mediana" value={formatOneDecimal(median(percents))} note="/ 100 pkt" />
-        <StatCard label="Najtrudniejsze" value={`Z${hardest.number}`} note={`${hardest.title} · śr. ${Math.round(hardest.avg * 100)}%`} />
+        <StatCard
+          label="Najtrudniejsze"
+          value={hardest ? `Z${hardest.number}` : "—"}
+          note={hardest ? `${hardest.title} · śr. ${Math.round(hardest.avg * 100)}%` : undefined}
+        />
         <StatCard
           label="Oznaczone"
           value={<span className="text-orange-ink">{highRisk}</span>}
@@ -152,7 +173,7 @@ export function ResultsView({ exam }: { exam: Exam }) {
           <p className="flex items-baseline justify-between gap-2 text-[13px] text-ink-2">
             Rozkład ocen <span className="text-xs">{results.length} uczniów</span>
           </p>
-          <GradeHistogram grades={percents.map(gradeFor)} className="mt-auto" />
+          <GradeHistogram grades={percents.map((p) => gradeFor(p, thresholds))} className="mt-auto" />
         </Card>
       </div>
 
@@ -199,7 +220,7 @@ export function ResultsView({ exam }: { exam: Exam }) {
           </thead>
           <tbody className="divide-y divide-line">
             {rows.map((r) => (
-              <ResultTableRow key={r.id} row={r} examId={exam.id} problems={problems} approved={approved} />
+              <ResultTableRow key={r.sessionId} row={r} examId={exam.id} problems={problems} />
             ))}
           </tbody>
         </table>
@@ -221,15 +242,7 @@ export function ResultsView({ exam }: { exam: Exam }) {
             <Button variant="secondary" onClick={() => setConfirmOpen(false)}>
               Anuluj
             </Button>
-            <Button
-              onClick={() => {
-                setApproved(true);
-                setConfirmOpen(false);
-                show("Wyniki zatwierdzone", "Uczniowie dostali powiadomienie e-mail.");
-              }}
-            >
-              Zatwierdź i pokaż
-            </Button>
+            <Button onClick={approve}>Zatwierdź i pokaż</Button>
           </>
         }
       />
@@ -253,18 +266,15 @@ function ResultTableRow({
   row,
   examId,
   problems,
-  approved,
 }: {
   row: ResultRow & { total: number; percent: number; grade: number };
   examId: string;
-  problems: ReturnType<typeof examProblems>;
-  approved: boolean;
+  problems: ExamProblem[];
 }) {
-  const review = approved ? "approved" : row.review;
   return (
     <tr className="hover:bg-subtle/50">
       <td className="px-4 py-2">
-        <Link href={`/panel/testy/${examId}/wyniki/${row.id}`} className="font-medium text-ink hover:text-accent-ink hover:underline">
+        <Link href={`/panel/testy/${examId}/wyniki/${row.sessionId}`} className="font-medium text-ink hover:text-accent-ink hover:underline">
           {row.name}
         </Link>
       </td>
@@ -282,9 +292,7 @@ function ResultTableRow({
         <RiskMeter score={row.risk} variant="compact" />
       </td>
       <td className="px-3 py-2">
-        <Tag tone={REVIEW_TONE[review]} pill>
-          {REVIEW_STATUS_LABEL[review]}
-        </Tag>
+        <ReviewStatusTag status={row.review} />
       </td>
     </tr>
   );

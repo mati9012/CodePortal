@@ -11,8 +11,10 @@ import {
   real,
   text,
   timestamp,
+  unique,
   uuid,
 } from 'drizzle-orm/pg-core';
+import type { ExamSettings, Language, ProblemVariant } from '@codeportal/contracts';
 
 const id = () => uuid().primaryKey().defaultRandom();
 const createdAt = () => timestamp({ withTimezone: true }).notNull().defaultNow();
@@ -27,6 +29,7 @@ export type CodeFile = { path: string; content: string };
 export type StarterCode = Record<string, CodeFile[]>;
 export type EditorEventType = 'delta' | 'paste_blocked' | 'blur' | 'fullscreen_exit' | 'run';
 export type SimilarityMethod = 'tokens' | 'ast' | 'ai_reference';
+export type TeacherActionKind = 'message' | 'add_time' | 'readmit' | 'end_session' | 'end_exam';
 
 export const role = pgEnum('role', ['organizer', 'participant', 'admin']);
 export const orgType = pgEnum('org_type', ['school', 'company']);
@@ -54,6 +57,8 @@ export const sessionStatus = pgEnum('session_status', [
 ]);
 export const submissionStatus = pgEnum('submission_status', ['queued', 'running', 'done', 'error']);
 export const verdict = pgEnum('verdict', ['OK', 'WA', 'TLE', 'MLE', 'RE', 'CE']);
+export const groupKind = pgEnum('group_kind', ['class', 'group']);
+export const reviewStatus = pgEnum('review_status', ['pending', 'approved', 'flagged']);
 
 export const organizations = pgTable('organizations', {
   id: id(),
@@ -128,6 +133,38 @@ export const verifications = pgTable(
   (t) => [index().on(t.identifier)],
 );
 
+export const groups = pgTable(
+  'groups',
+  {
+    id: id(),
+    ownerId: uuid()
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    name: text().notNull(),
+    kind: groupKind().notNull().default('class'),
+    schoolYear: text().notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [unique().on(t.ownerId, t.schoolYear, t.name)],
+);
+
+export const groupStudents = pgTable(
+  'group_students',
+  {
+    id: id(),
+    groupId: uuid()
+      .notNull()
+      .references(() => groups.id, { onDelete: 'cascade' }),
+    firstName: text().notNull(),
+    lastName: text().notNull(),
+    email: text(),
+    userId: uuid().references(() => users.id, { onDelete: 'set null' }),
+    invitedAt: ts(),
+    createdAt: createdAt(),
+  },
+  (t) => [index().on(t.groupId)],
+);
+
 export const problems = pgTable('problems', {
   id: id(),
   ownerId: uuid()
@@ -135,38 +172,54 @@ export const problems = pgTable('problems', {
     .references(() => users.id),
   title: text().notNull(),
   statementMd: text().notNull(),
-  languages: text().array().notNull().default([]),
+  inputSpec: text().notNull().default(''),
+  outputSpec: text().notNull().default(''),
+  languages: jsonb().$type<Language[][]>().notNull().default([]),
+  tags: text().array().notNull().default([]),
+  difficulty: integer().notNull().default(1),
+  points: integer().notNull().default(10),
   starterCode: jsonb().$type<StarterCode>(),
   timeLimitMs: integer().notNull().default(1000),
   memoryLimitMb: integer().notNull().default(256),
   type: problemType().notNull().default('io'),
   checkerType: checkerType().notNull().default('ignore_whitespace'),
   checkerCode: text(),
-  variants: jsonb(),
+  referenceLanguage: text().$type<Language>(),
+  referenceSolution: text().notNull().default(''),
+  variants: jsonb().$type<ProblemVariant[]>().notNull().default([]),
   createdAt: createdAt(),
+  updatedAt: updatedAt(),
 });
 
-export const testCases = pgTable('test_cases', {
-  id: id(),
-  problemId: uuid()
-    .notNull()
-    .references(() => problems.id, { onDelete: 'cascade' }),
-  groupNo: integer().notNull().default(0),
-  input: text().notNull().default(''),
-  expectedOutput: text().notNull().default(''),
-  script: text(),
-  points: integer().notNull().default(1),
-  isSample: boolean().notNull().default(false),
-});
+export const testCases = pgTable(
+  'test_cases',
+  {
+    id: id(),
+    problemId: uuid()
+      .notNull()
+      .references(() => problems.id, { onDelete: 'cascade' }),
+    position: integer().notNull().default(0),
+    name: text().notNull().default(''),
+    groupName: text().notNull().default(''),
+    input: text().notNull().default(''),
+    expectedOutput: text().notNull().default(''),
+    script: text(),
+    points: integer().notNull().default(1),
+    isSample: boolean().notNull().default(false),
+    referenceMs: integer(),
+  },
+  (t) => [index().on(t.problemId, t.position)],
+);
 
 export const exams = pgTable('exams', {
   id: id(),
   ownerId: uuid()
     .notNull()
     .references(() => users.id),
+  groupId: uuid().references(() => groups.id, { onDelete: 'set null' }),
   title: text().notNull(),
   mode: examMode().notNull().default('test'),
-  slug: text().notNull().unique(),
+  slug: text().unique(),
   startsAt: ts(),
   endsAt: ts(),
   durationMin: integer(),
@@ -174,8 +227,12 @@ export const exams = pgTable('exams', {
   protectionLevel: protectionLevel().notNull().default('standard'),
   resultsVisibility: resultsVisibility().notNull().default('after_end'),
   scoringRule: scoringRule().notNull().default('best'),
-  settings: jsonb(),
+  settings: jsonb().$type<ExamSettings>(),
+  publishedAt: ts(),
+  endedAt: ts(),
+  resultsApprovedAt: ts(),
   createdAt: createdAt(),
+  updatedAt: updatedAt(),
 });
 
 export const examProblems = pgTable(
@@ -212,16 +269,35 @@ export const sessions = pgTable(
       .notNull()
       .references(() => exams.id),
     userId: uuid().references(() => users.id),
+    studentId: uuid().references(() => groupStudents.id, { onDelete: 'set null' }),
     guestName: text(),
     startedAt: ts(),
     deadlineAt: ts(),
     finishedAt: ts(),
+    lastSeenAt: ts(),
+    waitingSince: ts(),
     ip: text(),
     userAgent: text(),
     riskScore: integer(),
     status: sessionStatus().notNull().default('pending'),
+    reviewStatus: reviewStatus().notNull().default('pending'),
   },
   (t) => [index().on(t.examId)],
+);
+
+export const teacherActions = pgTable(
+  'teacher_actions',
+  {
+    id: id(),
+    examId: uuid()
+      .notNull()
+      .references(() => exams.id, { onDelete: 'cascade' }),
+    sessionId: uuid().references(() => sessions.id, { onDelete: 'cascade' }),
+    kind: text().$type<TeacherActionKind>().notNull(),
+    payload: jsonb().$type<Record<string, unknown>>().notNull().default({}),
+    createdAt: createdAt(),
+  },
+  (t) => [index().on(t.examId, t.createdAt)],
 );
 
 export const codeSnapshots = pgTable(
@@ -299,7 +375,7 @@ export const reviews = pgTable('reviews', {
     .notNull()
     .references(() => users.id),
   manualScore: real(),
-  rubric: jsonb(),
+  rubric: jsonb().$type<Record<string, boolean>>(),
   flaggedDishonest: boolean().notNull().default(false),
   comment: text(),
   createdAt: createdAt(),
@@ -337,6 +413,18 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   accounts: many(accounts),
   problems: many(problems),
   exams: many(exams),
+  groups: many(groups),
+}));
+
+export const groupsRelations = relations(groups, ({ one, many }) => ({
+  owner: one(users, { fields: [groups.ownerId], references: [users.id] }),
+  students: many(groupStudents),
+  exams: many(exams),
+}));
+
+export const groupStudentsRelations = relations(groupStudents, ({ one }) => ({
+  group: one(groups, { fields: [groupStudents.groupId], references: [groups.id] }),
+  user: one(users, { fields: [groupStudents.userId], references: [users.id] }),
 }));
 
 export const problemsRelations = relations(problems, ({ one, many }) => ({
@@ -351,6 +439,7 @@ export const testCasesRelations = relations(testCases, ({ one }) => ({
 
 export const examsRelations = relations(exams, ({ one, many }) => ({
   owner: one(users, { fields: [exams.ownerId], references: [users.id] }),
+  group: one(groups, { fields: [exams.groupId], references: [groups.id] }),
   problems: many(examProblems),
   access: many(examAccess),
   sessions: many(sessions),
@@ -368,6 +457,7 @@ export const examAccessRelations = relations(examAccess, ({ one }) => ({
 export const sessionsRelations = relations(sessions, ({ one, many }) => ({
   exam: one(exams, { fields: [sessions.examId], references: [exams.id] }),
   user: one(users, { fields: [sessions.userId], references: [users.id] }),
+  student: one(groupStudents, { fields: [sessions.studentId], references: [groupStudents.id] }),
   snapshots: many(codeSnapshots),
   submissions: many(submissions),
 }));

@@ -1,40 +1,42 @@
 "use client";
 
+import type { Difficulty as DifficultyLevel, Language, ProblemSummary } from "@codeportal/contracts";
 import { Code2, FlaskConical, Globe, Search } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { formatDay } from "@/components/panel/format";
+import { QueryView } from "@/components/panel/query-view";
 import { buttonClasses } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/field";
 import { Card, Tag } from "@/components/ui/surface";
 import { SegmentedControl } from "@/components/ui/tabs";
+import { useApi } from "@/lib/api";
 import { cn } from "@/lib/cn";
-import {
-  LANGUAGE_LABEL,
-  PROBLEM_TYPE_LABEL,
-  PROBLEMS,
-  type Language,
-  type Problem,
-} from "@/lib/mock/panel";
+import { LANGUAGE_LABEL, PROBLEM_TYPE_LABEL } from "@/lib/panel-labels";
 
 const LANGS = Object.keys(LANGUAGE_LABEL) as Language[];
 const TYPE_ICON = { io: Code2, unit: FlaskConical, web: Globe } as const;
 
 export function ProblemBank() {
+  const query = useApi<ProblemSummary[]>("/panel/problems");
+  return <QueryView query={query}>{(problems) => <ProblemGrid problems={problems} />}</QueryView>;
+}
+
+function ProblemGrid({ problems }: { problems: ProblemSummary[] }) {
   const [query, setQuery] = useState("");
   const [type, setType] = useState("all");
   const [langs, setLangs] = useState<Language[]>([]);
 
   const rows = useMemo(
     () =>
-      PROBLEMS.filter(
+      problems.filter(
         (p) =>
           (type === "all" || p.type === type) &&
           (langs.length === 0 || p.languages.some((v) => langs.some((l) => v.includes(l)))) &&
           `${p.title} ${p.tags.join(" ")}`.toLowerCase().includes(query.trim().toLowerCase()),
       ),
-    [query, type, langs],
+    [problems, query, type, langs],
   );
 
   const toggle = (l: Language) =>
@@ -109,7 +111,7 @@ export function ProblemBank() {
   );
 }
 
-function ProblemCard({ p }: { p: Problem }) {
+function ProblemCard({ p }: { p: ProblemSummary }) {
   const Icon = TYPE_ICON[p.type];
   return (
     <Link href={`/panel/zadania/${p.id}`} className="group block rounded-card focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-accent/25">
@@ -153,7 +155,7 @@ function ProblemCard({ p }: { p: Problem }) {
   );
 }
 
-function Difficulty({ level }: { level: 1 | 2 | 3 }) {
+function Difficulty({ level }: { level: DifficultyLevel }) {
   const label = ["łatwe", "średnie", "trudne"][level - 1];
   return (
     <span className="flex shrink-0 items-center gap-0.5 pt-1" title={`Trudność: ${label}`} aria-label={`Trudność: ${label}`}>

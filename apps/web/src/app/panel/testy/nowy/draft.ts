@@ -1,35 +1,8 @@
-import { PROBLEMS, type Problem } from "@/lib/mock/panel";
+import type { ExamDraft, ExamItem, ProblemSummary, Protection } from "@codeportal/contracts";
+import { useApi } from "@/lib/api";
 
-export type Item =
-  | { key: string; kind: "problem"; id: string; points: number }
-  | { key: string; kind: "pool"; ids: string[]; points: number };
-
-export type Protection = "loose" | "standard" | "exam";
-export type Access = "code" | "list" | "password" | "sso";
-export type ResultsVisibility = "immediate" | "after_end" | "after_approval";
-
-export type Draft = {
-  title: string;
-  mode: "test" | "contest";
-  groupId: string;
-  date: string;
-  time: string;
-  duration: number;
-  instructions: string;
-  items: Item[];
-  access: Access;
-  password: string;
-  lateJoinMin: number;
-  attempts: number;
-  protection: Protection;
-  blockPaste: boolean;
-  fullscreen: boolean;
-  fullscreenExits: number;
-  shuffle: boolean;
-  results: ResultsVisibility;
-  scoring: "best" | "last";
-  thresholds: [number, number, number, number, number];
-};
+export type Item = ExamItem;
+export type Draft = ExamDraft;
 
 export const PROTECTION_PRESET: Record<Protection, Pick<Draft, "blockPaste" | "fullscreen">> = {
   loose: { blockPaste: false, fullscreen: false },
@@ -37,12 +10,17 @@ export const PROTECTION_PRESET: Record<Protection, Pick<Draft, "blockPaste" | "f
   exam: { blockPaste: true, fullscreen: true },
 };
 
-export const INITIAL_DRAFT: Draft = {
+const DEFAULT_TIME = "08:00";
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+const isoDay = (ms: number) => new Date(ms).toISOString().slice(0, 10);
+
+export const initialDraft = (now: number): Draft => ({
   title: "",
   mode: "test",
   groupId: "",
-  date: "2026-11-20",
-  time: "08:55",
+  date: isoDay(now + DAY_MS),
+  time: DEFAULT_TIME,
   duration: 45,
   instructions: "",
   items: [],
@@ -57,20 +35,7 @@ export const INITIAL_DRAFT: Draft = {
   results: "after_approval",
   scoring: "best",
   thresholds: [30, 50, 70, 85, 95],
-};
-
-export const ACCESS_LABEL: Record<Access, string> = {
-  code: "Kod lub link",
-  list: "Lista uczniów klasy",
-  password: "Link + hasło",
-  sso: "Konto szkolne",
-};
-
-export const PROTECTION_LABEL: Record<Protection, string> = {
-  loose: "Luźny",
-  standard: "Standard",
-  exam: "Egzamin",
-};
+});
 
 export const GRADES = [
   { grade: 2, name: "dopuszczający" },
@@ -80,7 +45,11 @@ export const GRADES = [
   { grade: 6, name: "celujący" },
 ] as const;
 
-export const problemById = (id: string): Problem => PROBLEMS.find((p) => p.id === id)!;
+export function useProblemBank() {
+  const { data = [] } = useApi<ProblemSummary[]>("/panel/problems");
+  const byId = new Map(data.map((p) => [p.id, p]));
+  return { problems: data, problemById: (id: string) => byId.get(id) };
+}
 
 export const totalPoints = (items: Item[]) => items.reduce((n, i) => n + i.points, 0);
 

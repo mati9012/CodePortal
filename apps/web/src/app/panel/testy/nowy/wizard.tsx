@@ -1,32 +1,32 @@
 "use client";
 
+import type { Created, GroupSummary, Published as PublishedCode } from "@codeportal/contracts";
 import { ArrowLeft, ArrowRight, Rocket } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { AutosaveStatus } from "@/components/exam/timer";
 import { PageHeader } from "@/components/panel/page-header";
+import { QueryView } from "@/components/panel/query-view";
 import { Button } from "@/components/ui/button";
 import { Banner } from "@/components/ui/feedback";
 import { Card } from "@/components/ui/surface";
 import { Stepper, type StepState } from "@/components/ui/stepper";
+import { api, errorMessage, useApi } from "@/lib/api";
 import { cn } from "@/lib/cn";
-import { GROUPS } from "@/lib/mock/panel";
-import {
-  ACCESS_LABEL,
-  INITIAL_DRAFT,
-  PROTECTION_LABEL,
-  totalPoints,
-  type Draft,
-} from "./draft";
+import { ACCESS_LABEL, PROTECTION_LABEL } from "@/lib/panel-labels";
+import { useNow } from "@/lib/use-now";
+import { initialDraft, totalPoints, type Draft } from "./draft";
 import { Published } from "./published";
 import { StepAccess } from "./step-access";
 import { StepBasics } from "./step-basics";
 import { StepGrading } from "./step-grading";
 import { StepProblems } from "./step-problems";
 
-const MOCK_SAVE_DELAY_MS = 700;
+const SAVE_DELAY_MS = 700;
 const SAVED_LABEL_REFRESH_MS = 5000;
 const MIN_DURATION_MIN = 5;
 const MIN_PASSWORD_LENGTH = 4;
+const SECOND_MS = 1000;
 
 const STEPS = ["Podstawy", "Zadania", "Dostęp i ochrona", "Ocenianie i publikacja"];
 
@@ -36,6 +36,8 @@ export type StepProps = {
   errors: Partial<Record<keyof Draft, string>>;
 };
 
+type SaveState = { saving: boolean; at: number | null; error: string | null };
+
 function validate(step: number, d: Draft): StepProps["errors"] {
   const e: StepProps["errors"] = {};
   if (step === 0) {
@@ -43,30 +45,65 @@ function validate(step: number, d: Draft): StepProps["errors"] {
     if (!d.duration || d.duration < MIN_DURATION_MIN) e.duration = `Minimum ${MIN_DURATION_MIN} minut.`;
   }
   if (step === 1 && d.items.length === 0) e.items = "Dodaj przynajmniej jedno zadanie.";
-  if (step === 2 && d.access === "password" && d.password.trim().length < MIN_PASSWORD_LENGTH)
+  const password = d.password.trim();
+  if (step === 2 && d.access === "password" && password && password.length < MIN_PASSWORD_LENGTH)
     e.password = `Hasło musi mieć co najmniej ${MIN_PASSWORD_LENGTH} znaki.`;
   if (step === 3 && d.thresholds.some((t, i) => i > 0 && t <= d.thresholds[i - 1]!))
     e.thresholds = "Progi muszą rosnąć od oceny 2 do 6.";
   return e;
 }
 
-export function TestWizard() {
-  const [draft, setDraft] = useState<Draft>(INITIAL_DRAFT);
+export function TestWizardEntry() {
+  const params = useSearchParams();
+  const [{ examId, groupId }] = useState(() => ({ examId: params.get("id"), groupId: params.get("group") ?? "" }));
+  const now = useNow(SAVED_LABEL_REFRESH_MS);
+  const existing = useApi<Draft>(examId ? `/panel/exams/${examId}/draft` : null, { revalidateOnFocus: false });
+  if (!examId) return now ? <TestWizard key="new" initial={{ ...initialDraft(now), groupId }} initialId={null} /> : null;
+  return <QueryView query={existing}>{(draft) => <TestWizard key={examId} initial={draft} initialId={examId} />}</QueryView>;
+}
+
+function TestWizard({ initial, initialId }: { initial: Draft; initialId: string | null }) {
+  const router = useRouter();
+  const [draft, setDraft] = useState<Draft>(initial);
   const [step, setStep] = useState(0);
   const [errors, setErrors] = useState<StepProps["errors"]>({});
-  const [published, setPublished] = useState<string | null>(null);
-  const [save, setSave] = useState<{ saving: boolean; at: number | null }>({ saving: false, at: null });
-  const [now, setNow] = useState(0);
+  const [publishError, setPublishError] = useState<string | null>(null);
+  const [published, setPublished] = useState<{ id: string; code: string } | null>(null);
+  const [save, setSave] = useState<SaveState>({ saving: false, at: null, error: null });
+  const now = useNow(SAVED_LABEL_REFRESH_MS);
+  const examId = useRef<string | null>(initialId);
+  const latest = useRef(draft);
   const saveTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const pending = useRef<Promise<void>>(Promise.resolve());
   const top = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), SAVED_LABEL_REFRESH_MS);
-    return () => clearInterval(id);
-  }, []);
+  useEffect(() => () => clearTimeout(saveTimer.current), []);
+
+  function persist() {
+    const body = latest.current;
+    pending.current = pending.current.then(async () => {
+      try {
+        if (examId.current) {
+          await api(`/panel/exams/${examId.current}/draft`, { method: "PUT", body });
+        } else {
+          const { id } = await api<Created>("/panel/exams", { body });
+          examId.current = id;
+          router.replace(`/panel/testy/nowy?id=${id}`, { scroll: false });
+        }
+        setSave({ saving: false, at: Date.now(), error: null });
+      } catch (err) {
+        setSave({ saving: false, at: null, error: errorMessage(err) });
+      }
+    });
+    return pending.current;
+  }
 
   function update(patch: Parameters<StepProps["update"]>[0]) {
-    setDraft((d) => ({ ...d, ...(typeof patch === "function" ? patch(d) : patch) }));
+    setDraft((d) => {
+      const next = { ...d, ...(typeof patch === "function" ? patch(d) : patch) };
+      latest.current = next;
+      return next;
+    });
     setErrors((e) => {
       if (typeof patch === "function") return {};
       const next = { ...e };
@@ -75,11 +112,7 @@ export function TestWizard() {
     });
     setSave((s) => ({ ...s, saving: true }));
     clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(() => {
-      const at = Date.now();
-      setNow(at);
-      setSave({ saving: false, at });
-    }, MOCK_SAVE_DELAY_MS);
+    saveTimer.current = setTimeout(persist, SAVE_DELAY_MS);
   }
 
   function go(to: number) {
@@ -95,24 +128,34 @@ export function TestWizard() {
     top.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
-  function publish() {
+  async function publish() {
     const e = validate(3, draft);
     if (Object.keys(e).length) return setErrors(e);
-    const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-    const pick = () => alphabet[Math.floor(Math.random() * alphabet.length)];
-    setPublished(`${pick()}${pick()}${pick()}-${pick()}${pick()}${pick()}`);
+    clearTimeout(saveTimer.current);
+    await persist();
+    if (!examId.current) return;
+    try {
+      const { code } = await api<PublishedCode>(`/panel/exams/${examId.current}/publish`, { method: "POST" });
+      setPublishError(null);
+      setPublished({ id: examId.current, code });
+    } catch (err) {
+      setPublishError(errorMessage(err));
+    }
   }
 
   if (published) {
     return (
       <Published
         draft={draft}
-        code={published}
+        examId={published.id}
+        code={published.code}
         onReset={() => {
-          setDraft(INITIAL_DRAFT);
+          examId.current = null;
+          router.push("/panel/testy/nowy");
+          setDraft(initialDraft(Date.now()));
           setStep(0);
           setPublished(null);
-          setSave({ saving: false, at: null });
+          setSave({ saving: false, at: null, error: null });
         }}
       />
     );
@@ -120,11 +163,12 @@ export function TestWizard() {
 
   const states: StepState[] = STEPS.map((_, i) => (i < step ? "done" : i === step ? "current" : "upcoming"));
   const Step = [StepBasics, StepProblems, StepAccess, StepGrading][step]!;
+  const shownError = publishError ?? save.error;
 
   return (
     <div ref={top} className="scroll-mt-24">
       <PageHeader
-        title={draft.title.trim() || "Nowy test"}
+        title={draft.title.trim() || (initialId ? "Szkic testu" : "Nowy test")}
         crumbs={[
           { href: "/panel", label: "Pulpit" },
           { href: "/panel/testy", label: "Testy i konkursy" },
@@ -135,9 +179,11 @@ export function TestWizard() {
               state={
                 save.saving
                   ? { kind: "saving" }
-                  : { kind: "saved", secondsAgo: Math.max(0, Math.round((now - save.at!) / 1000)) }
+                  : { kind: "saved", secondsAgo: Math.max(0, Math.round((now - save.at!) / SECOND_MS)) }
               }
             />
+          ) : save.error ? (
+            <AutosaveStatus state={{ kind: "offline" }} />
           ) : (
             <span className="text-xs text-ink-3">Szkic zapisuje się automatycznie</span>
           )
@@ -151,6 +197,11 @@ export function TestWizard() {
           {Object.keys(errors).length > 0 && (
             <Banner tone="danger" title="Popraw zaznaczone pola.">
               {Object.values(errors)[0]}
+            </Banner>
+          )}
+          {shownError && (
+            <Banner tone="danger" title={publishError ? "Nie opublikowano." : "Nie zapisano szkicu."}>
+              {shownError}
             </Banner>
           )}
           <Step draft={draft} update={update} errors={errors} />
@@ -183,7 +234,8 @@ export function TestWizard() {
 }
 
 function Summary({ draft, step, onJump }: { draft: Draft; step: number; onJump: (s: number) => void }) {
-  const group = GROUPS.find((g) => g.id === draft.groupId);
+  const { data: groups = [] } = useApi<GroupSummary[]>("/panel/groups");
+  const group = groups.find((g) => g.id === draft.groupId);
   const rows: { label: string; value: string; step: number }[] = [
     { label: "Rodzaj", value: draft.mode === "test" ? "Sprawdzian" : "Konkurs", step: 0 },
     { label: "Dla", value: group ? `${group.name} · ${group.students} uczniów` : "Każdy z kodem", step: 0 },

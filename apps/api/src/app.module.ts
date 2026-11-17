@@ -6,6 +6,7 @@ import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 import { AuthModule } from './auth/auth.module.js';
 import { schema } from './db/index.js';
+import { PanelModule } from './panel/panel.module.js';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { schema } from './db/index.js';
       }),
     }),
     AuthModule,
+    PanelModule,
   ],
   controllers: [AppController],
   providers: [AppService],

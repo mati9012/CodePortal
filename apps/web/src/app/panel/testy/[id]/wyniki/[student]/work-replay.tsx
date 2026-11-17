@@ -1,5 +1,6 @@
 "use client";
 
+import type { Replay, ReplayMarker } from "@codeportal/contracts";
 import { Pause, Play } from "lucide-react";
 import { useEffect, useState } from "react";
 import { formatClock } from "@/components/exam/format";
@@ -8,11 +9,9 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/surface";
 import { SegmentedControl } from "@/components/ui/tabs";
 import { cn } from "@/lib/cn";
-import { REPLAY, type ReplayMarker } from "@/lib/mock/exam-session";
 
 const SPEEDS = [1, 4, 16];
 const TICK_MS = 250;
-const CODE_COMPLETE_AT = 0.66;
 
 const MARKER_META: Record<ReplayMarker["kind"], { label: string; color: string }> = {
   fullscreen: { label: "pełny ekran", color: "bg-orange" },
@@ -30,39 +29,37 @@ const MARKER_META: Record<ReplayMarker["kind"], { label: string; color: string }
 const LEGEND: ReplayMarker["kind"][] = ["fullscreen", "paste", "submit", "pause", "jump"];
 
 const MARKER_CAPTION: Partial<Record<ReplayMarker["kind"], string>> = {
-  jump: "+40 linii w 3 s – pętla z best/cur pojawia się w całości",
+  jump: "duży fragment kodu pojawił się naraz",
   paste: "zablokowana próba wklejenia",
   fullscreen: "wyjście z pełnego ekranu",
   submit: "zgłoszenie rozwiązania",
-  pause: "brak aktywności przez 2 min",
+  pause: "brak aktywności przez co najmniej 2 min",
 };
 
-export function WorkReplay({ problems }: { problems: number[] }) {
-  const [problem, setProblem] = useState(String(Math.min(2, problems.length)));
-  const [position, setPosition] = useState(REPLAY.positionSec);
+export function WorkReplay({ problems, replay }: { problems: number[]; replay: Replay }) {
+  const firstWithCode = problems.find((n) => replay.frames[n]?.length) ?? problems[0] ?? 1;
+  const [problem, setProblem] = useState(String(firstWithCode));
+  const [position, setPosition] = useState(replay.durationSec);
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeed] = useState(4);
+  const duration = replay.durationSec;
 
-  const running = playing && position < REPLAY.durationSec;
+  const running = playing && position < duration;
 
   useEffect(() => {
     if (!running) return;
-    const tick = setInterval(
-      () => setPosition((p) => Math.min(REPLAY.durationSec, p + (speed * TICK_MS) / 1000)),
-      TICK_MS,
-    );
+    const tick = setInterval(() => setPosition((p) => Math.min(duration, p + (speed * TICK_MS) / 1000)), TICK_MS);
     return () => clearInterval(tick);
-  }, [running, speed]);
+  }, [running, speed, duration]);
 
-  const lines = REPLAY.code.split("\n");
-  const progress = position / REPLAY.durationSec;
-  const visibleLines = Math.max(1, Math.ceil(lines.length * Math.min(1, progress / CODE_COMPLETE_AT)));
-  const jumpAt = REPLAY.markers.find((m) => m.kind === "jump")!.at;
-  const current = [...REPLAY.markers].reverse().find((m) => m.at <= position);
+  const frames = replay.frames[Number(problem)] ?? [];
+  const code = [...frames].reverse().find((f) => f.at <= position)?.code ?? "";
+  const progress = position / duration;
+  const current = [...replay.markers].reverse().find((m) => m.at <= position);
 
   const togglePlay = () => {
     if (running) return setPlaying(false);
-    if (position >= REPLAY.durationSec) setPosition(0);
+    if (position >= duration) setPosition(0);
     setPlaying(true);
   };
 
@@ -80,11 +77,11 @@ export function WorkReplay({ problems }: { problems: number[] }) {
       </div>
 
       <div className="relative">
-        <CodeView
-          code={lines.slice(0, visibleLines).join("\n")}
-          highlight={position >= jumpAt ? REPLAY.highlight : undefined}
-          className="min-h-72 rounded-none"
-        />
+        {frames.length ? (
+          <CodeView code={code || " "} className="min-h-72 rounded-none" />
+        ) : (
+          <p className="flex min-h-72 items-center justify-center px-4 text-body text-ink-2">Brak zapisanych wersji kodu dla tego zadania.</p>
+        )}
         <span data-theme="dark" className="absolute right-3 top-3 rounded-tag bg-subtle px-2 py-0.5 font-mono text-[11px] text-ink-2">
           tylko do odczytu · {formatClock(position)}
         </span>
@@ -94,7 +91,7 @@ export function WorkReplay({ problems }: { problems: number[] }) {
         <input
           type="range"
           min={0}
-          max={REPLAY.durationSec}
+          max={duration}
           value={Math.round(position)}
           onChange={(e) => setPosition(Number(e.target.value))}
           aria-label="Pozycja odtwarzania"
@@ -105,18 +102,18 @@ export function WorkReplay({ problems }: { problems: number[] }) {
           className="relative h-5 cursor-pointer"
           onClick={(e) => {
             const rect = e.currentTarget.getBoundingClientRect();
-            setPosition(((e.clientX - rect.left) / rect.width) * REPLAY.durationSec);
+            setPosition(((e.clientX - rect.left) / rect.width) * duration);
           }}
           aria-hidden
         >
           <span className="absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-line" />
           <span className="absolute left-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-accent" style={{ width: `${progress * 100}%` }} />
-          {REPLAY.markers.map((m) => (
+          {replay.markers.map((m, i) => (
             <span
-              key={m.at}
+              key={`${m.kind}-${m.at}-${i}`}
               title={MARKER_META[m.kind].label}
               className={cn("absolute top-1/2 h-3 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-[2px]", MARKER_META[m.kind].color)}
-              style={{ left: `${(m.at / REPLAY.durationSec) * 100}%` }}
+              style={{ left: `${Math.min(100, (m.at / duration) * 100)}%` }}
             />
           ))}
           <span
@@ -130,7 +127,7 @@ export function WorkReplay({ problems }: { problems: number[] }) {
             {running ? <Pause /> : <Play />}
           </Button>
           <label htmlFor="replay-position" className="font-mono text-[13px] tabular-nums text-ink">
-            {formatClock(position)} <span className="text-ink-3">/ {formatClock(REPLAY.durationSec)}</span>
+            {formatClock(position)} <span className="text-ink-3">/ {formatClock(duration)}</span>
           </label>
           <SegmentedControl
             size="sm"

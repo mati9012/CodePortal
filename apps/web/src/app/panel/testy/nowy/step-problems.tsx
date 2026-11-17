@@ -15,8 +15,9 @@ import { Button, IconButton } from "@/components/ui/button";
 import { Input } from "@/components/ui/field";
 import { Card } from "@/components/ui/surface";
 import { cn } from "@/lib/cn";
-import { LANGUAGE_LABEL, PROBLEMS, type Problem } from "@/lib/mock/panel";
-import { problemById, totalPoints, usedProblemIds, type Item } from "./draft";
+import type { ProblemSummary } from "@codeportal/contracts";
+import { LANGUAGE_LABEL } from "@/lib/panel-labels";
+import { totalPoints, usedProblemIds, useProblemBank, type Item } from "./draft";
 import type { StepProps } from "./wizard";
 
 const DT_PROBLEM = "application/x-cp-problem";
@@ -25,16 +26,20 @@ const DT_ITEM = "application/x-cp-item";
 let seq = 0;
 const newKey = () => `i${++seq}-${Math.random().toString(36).slice(2, 7)}`;
 
-const langs = (p: Problem) => p.languages.map((v) => v.map((l) => LANGUAGE_LABEL[l]).join(" + ")).join(" · ");
+const MISSING_TITLE = "Usunięte zadanie";
+
+const langs = (p: ProblemSummary | undefined) =>
+  !p ? "" : p.languages.map((v) => v.map((l) => LANGUAGE_LABEL[l]).join(" + ")).join(" · ");
 
 export function StepProblems({ draft, update, errors }: StepProps) {
+  const { problemById } = useProblemBank();
   const items = draft.items;
   const [selected, setSelected] = useState<string[]>([]);
   const [dropAt, setDropAt] = useState<number | null>(null);
   const setItems = (fn: (cur: Item[]) => Item[]) => update((d) => ({ items: fn(d.items) }));
 
   const add = (id: string, at?: number) => {
-    const item: Item = { key: newKey(), kind: "problem", id, points: problemById(id).points };
+    const item: Item = { key: newKey(), kind: "problem", id, points: problemById(id)?.points ?? 0 };
     setItems((cur) => {
       const i = at ?? cur.length;
       return [...cur.slice(0, i), item, ...cur.slice(i)];
@@ -74,7 +79,7 @@ export function StepProblems({ draft, update, errors }: StepProps) {
     const at = items.findIndex((i) => i.key === key);
     const pool = items[at];
     if (pool?.kind !== "pool") return;
-    const singles: Item[] = pool.ids.map((id) => ({ key: newKey(), kind: "problem", id, points: problemById(id).points }));
+    const singles: Item[] = pool.ids.map((id) => ({ key: newKey(), kind: "problem", id, points: problemById(id)?.points ?? 0 }));
     setItems((cur) => [...cur.slice(0, at), ...singles, ...cur.slice(at + 1)]);
   };
   const removeFromPool = (key: string, id: string) => {
@@ -215,8 +220,9 @@ function ItemRow({
   onSplit: () => void;
   onRemoveFromPool: (id: string) => void;
 }) {
+  const { problemById } = useProblemBank();
   const pool = item.kind === "pool";
-  const title = pool ? `Pula · losuj 1 z ${item.ids.length}` : problemById(item.id).title;
+  const title = pool ? `Pula · losuj 1 z ${item.ids.length}` : (problemById(item.id)?.title ?? MISSING_TITLE);
   return (
     <div
       className={cn(
@@ -249,8 +255,8 @@ function ItemRow({
           <ul className="mt-1.5 flex flex-wrap gap-1">
             {item.ids.map((id) => (
               <li key={id} className="inline-flex h-6 items-center gap-1 rounded-tag border border-line bg-surface pl-2 pr-1 text-xs text-ink">
-                {problemById(id).title}
-                <button type="button" onClick={() => onRemoveFromPool(id)} aria-label={`Usuń z puli: ${problemById(id).title}`} className="rounded-sm p-0.5 text-ink-3 hover:text-danger-ink">
+                {problemById(id)?.title ?? MISSING_TITLE}
+                <button type="button" onClick={() => onRemoveFromPool(id)} aria-label={`Usuń z puli: ${problemById(id)?.title ?? MISSING_TITLE}`} className="rounded-sm p-0.5 text-ink-3 hover:text-danger-ink">
                   <X className="size-3" />
                 </button>
               </li>
@@ -293,10 +299,11 @@ function ItemRow({
 }
 
 function Bank({ used, onAdd }: { used: Set<string>; onAdd: (id: string) => void }) {
+  const { problems } = useProblemBank();
   const [query, setQuery] = useState("");
   const rows = useMemo(
-    () => PROBLEMS.filter((p) => `${p.title} ${p.tags.join(" ")}`.toLowerCase().includes(query.trim().toLowerCase())),
-    [query],
+    () => problems.filter((p) => `${p.title} ${p.tags.join(" ")}`.toLowerCase().includes(query.trim().toLowerCase())),
+    [problems, query],
   );
   return (
     <Card className="flex min-w-0 flex-col p-5 sm:p-6 xl:sticky xl:top-24 xl:max-h-[calc(100dvh-8rem)] xl:self-start">

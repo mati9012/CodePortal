@@ -1,5 +1,6 @@
 "use client";
 
+import type { GroupSummary } from "@codeportal/contracts";
 import { MonitorPlay, Plus } from "lucide-react";
 import Link from "next/link";
 import { QRCodeSVG } from "qrcode.react";
@@ -7,13 +8,14 @@ import { Bit } from "@/components/brand/bit";
 import { CopyButton } from "@/components/panel/copy-button";
 import { Button, buttonClasses } from "@/components/ui/button";
 import { Card } from "@/components/ui/surface";
-import { GROUPS } from "@/lib/mock/panel";
+import { useApi } from "@/lib/api";
 import { useJoinLink } from "@/lib/use-origin";
 import type { Draft } from "./draft";
 
-export function Published({ draft, code, onReset }: { draft: Draft; code: string; onReset: () => void }) {
+export function Published({ draft, examId, code, onReset }: { draft: Draft; examId: string; code: string; onReset: () => void }) {
   const link = useJoinLink(code);
-  const group = GROUPS.find((g) => g.id === draft.groupId);
+  const { data: groups = [] } = useApi<GroupSummary[]>("/panel/groups");
+  const group = groups.find((g) => g.id === draft.groupId);
   return (
     <div className="mx-auto flex max-w-2xl flex-col items-center py-4 text-center">
       <Bit size="l" preload />
@@ -46,7 +48,7 @@ export function Published({ draft, code, onReset }: { draft: Draft; code: string
       </Card>
 
       <div className="mt-6 flex flex-wrap justify-center gap-2">
-        <Link href="/panel/testy/e2/rzutnik" className={buttonClasses({ size: "lg" })}>
+        <Link href={`/panel/testy/${examId}/rzutnik`} className={buttonClasses({ size: "lg" })}>
           <MonitorPlay className="size-[18px]" aria-hidden /> Pokaż na rzutniku
         </Link>
         <Link href="/panel/testy" className={buttonClasses({ size: "lg", variant: "secondary" })}>

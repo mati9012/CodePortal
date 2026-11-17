@@ -1,41 +1,50 @@
 "use client";
 
+import type { ExamDetail } from "@codeportal/contracts";
 import { Maximize, Minimize, X } from "lucide-react";
 import Link from "next/link";
 import { QRCodeSVG } from "qrcode.react";
 import { useEffect, useState } from "react";
 import { formatClock } from "@/components/exam/format";
-import type { Exam } from "@/lib/mock/panel";
+import { QueryView } from "@/components/panel/query-view";
+import { useApi } from "@/lib/api";
+import { groupLabel } from "@/lib/panel-labels";
 import { useJoinLink, useOrigin } from "@/lib/use-origin";
+import { useNow } from "@/lib/use-now";
 
-const MOCK_COUNTDOWN_SEC = 4 * 60 + 12;
-const MOCK_REMAINING_SEC = 32 * 60 + 14;
-const MOCK_JOINED_SHARE = 0.7;
-const MOCK_JOIN_INTERVAL_MS = 7000;
+const REFRESH_MS = 5000;
 const SECOND_MS = 1000;
 
-export function Projector({ exam, code }: { exam: Exam; code: string }) {
+export function Projector({ id }: { id: string }) {
+  const query = useApi<ExamDetail>(`/panel/exams/${id}`, { refreshInterval: REFRESH_MS });
+  return (
+    <QueryView query={query}>
+      {(detail) =>
+        detail.exam.code ? (
+          <ProjectorScreen detail={detail} code={detail.exam.code} />
+        ) : (
+          <p className="py-10 text-center text-body text-ink-2">Opublikuj test, żeby pokazać kod na rzutniku.</p>
+        )
+      }
+    </QueryView>
+  );
+}
+
+function ProjectorScreen({ detail, code }: { detail: ExamDetail; code: string }) {
+  const { exam, timing } = detail;
   const host = useOrigin().replace(/^https?:\/\//, "");
   const link = useJoinLink(code);
+  const now = useNow();
   const live = exam.status === "live";
-  const [countdown, setCountdown] = useState(live ? MOCK_REMAINING_SEC : MOCK_COUNTDOWN_SEC);
-  const [joined, setJoined] = useState(live ? exam.participants.joined : Math.round(exam.participants.total * MOCK_JOINED_SHARE));
+  const target = new Date(live ? timing.endsAt : timing.startsAt).getTime();
+  const countdown = now ? Math.max(0, Math.floor((target - now) / SECOND_MS)) : 0;
   const [fullscreen, setFullscreen] = useState(false);
 
   useEffect(() => {
-    const tick = setInterval(() => setCountdown((s) => Math.max(0, s - 1)), SECOND_MS);
-    const join = setInterval(
-      () => setJoined((n) => Math.min(exam.participants.total, n + 1)),
-      MOCK_JOIN_INTERVAL_MS,
-    );
     const syncFullscreen = () => setFullscreen(Boolean(document.fullscreenElement));
     document.addEventListener("fullscreenchange", syncFullscreen);
-    return () => {
-      clearInterval(tick);
-      clearInterval(join);
-      document.removeEventListener("fullscreenchange", syncFullscreen);
-    };
-  }, [exam.participants.total]);
+    return () => document.removeEventListener("fullscreenchange", syncFullscreen);
+  }, []);
 
   const toggleFullscreen = () =>
     document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen();
@@ -63,7 +72,7 @@ export function Projector({ exam, code }: { exam: Exam; code: string }) {
       <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col items-center justify-center gap-12 px-6 pb-12 lg:flex-row lg:justify-between lg:gap-16 lg:px-16">
         <div className="flex min-w-0 flex-col gap-6 max-lg:items-center max-lg:text-center">
           <p className="text-xl text-white/60 lg:text-2xl">
-            {exam.title} · {exam.group}
+            {exam.title} · {groupLabel(exam.group)}
           </p>
           <p className="text-xl text-white/80 lg:text-2xl">
             Wejdź na <b className="font-semibold text-white">{host}/dolacz</b> i wpisz kod
@@ -77,7 +86,7 @@ export function Projector({ exam, code }: { exam: Exam; code: string }) {
             <div>
               <p className="text-base text-white/60">Dołączyło</p>
               <p className="font-mono text-5xl font-semibold tabular-nums" aria-live="polite">
-                {joined} <span className="text-3xl text-white/40">/ {exam.participants.total}</span>
+                {exam.participants.joined} <span className="text-3xl text-white/40">/ {exam.participants.total}</span>
               </p>
             </div>
           </div>
