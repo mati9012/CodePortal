@@ -111,7 +111,7 @@ export default function DashboardPage() {
                   </div>
                   <RiskMeter score={r.risk} variant="compact" />
                   <ScoreChip score={r.score} max={r.max} />
-                  <Link href="/panel/wyniki" className={buttonClasses({ variant: "secondary", size: "sm" })}>
+                  <Link href={`/panel/testy/${r.examId}/wyniki/${r.studentId}`} className={buttonClasses({ variant: "secondary", size: "sm" })}>
                     Sprawdź
                   </Link>
                 </li>

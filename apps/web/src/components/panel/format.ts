@@ -10,3 +10,7 @@ export function formatWhen(iso: string) {
 export function formatDay(iso: string) {
   return dateFmt.format(new Date(iso));
 }
+
+export function formatTime(date: Date | string) {
+  return timeFmt.format(typeof date === "string" ? new Date(date) : date);
+}

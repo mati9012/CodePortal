@@ -100,7 +100,7 @@ export function SegmentedControl(props: TabsBaseProps & { size?: "sm" | "md" }) 
     <div
       role="tablist"
       aria-label={props["aria-label"]}
-      className={cn("inline-flex rounded-input border border-line bg-subtle p-0.5", className)}
+      className={cn("inline-flex max-w-full overflow-x-auto rounded-input border border-line bg-subtle p-0.5 [scrollbar-width:none]", className)}
     >
       {options.map((o, i) => {
         const active = o.value === current;
@@ -118,7 +118,7 @@ export function SegmentedControl(props: TabsBaseProps & { size?: "sm" | "md" }) 
             onClick={() => select(o.value)}
             onKeyDown={(e) => onKeyDown(e, i)}
             className={cn(
-              "inline-flex items-center gap-1.5 rounded-[8px] font-medium transition-colors",
+              "inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-[8px] font-medium transition-colors",
               "focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-accent/25",
               size === "sm" ? "h-6 px-2 text-xs" : "h-7 px-3 text-[13px]",
               active ? "bg-surface text-ink shadow-sm" : "text-ink-2 hover:text-ink",

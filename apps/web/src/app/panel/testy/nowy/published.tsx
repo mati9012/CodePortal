@@ -1,19 +1,18 @@
 "use client";
 
-import { Check, Copy, MonitorPlay, Plus } from "lucide-react";
+import { MonitorPlay, Plus } from "lucide-react";
 import Link from "next/link";
 import { QRCodeSVG } from "qrcode.react";
-import { useState } from "react";
 import { Bit } from "@/components/brand/bit";
+import { CopyButton } from "@/components/panel/copy-button";
 import { Button, buttonClasses } from "@/components/ui/button";
 import { Card } from "@/components/ui/surface";
 import { GROUPS } from "@/lib/mock/panel";
+import { useJoinLink } from "@/lib/use-origin";
 import type { Draft } from "./draft";
 
-const COPIED_FEEDBACK_MS = 1500;
-
 export function Published({ draft, code, onReset }: { draft: Draft; code: string; onReset: () => void }) {
-  const link = `${window.location.origin}/t/${code}`;
+  const link = useJoinLink(code);
   const group = GROUPS.find((g) => g.id === draft.groupId);
   return (
     <div className="mx-auto flex max-w-2xl flex-col items-center py-4 text-center">
@@ -61,22 +60,3 @@ export function Published({ draft, code, onReset }: { draft: Draft; code: string
   );
 }
 
-function CopyButton({ value, label }: { value: string; label: string }) {
-  const [done, setDone] = useState(false);
-  return (
-    <Button
-      variant="secondary"
-      size="sm"
-      aria-label={label}
-      title={label}
-      className="w-8 shrink-0 px-0"
-      onClick={async () => {
-        await navigator.clipboard?.writeText(value);
-        setDone(true);
-        setTimeout(() => setDone(false), COPIED_FEEDBACK_MS);
-      }}
-    >
-      {done ? <Check className="text-success-ink" /> : <Copy />}
-    </Button>
-  );
-}

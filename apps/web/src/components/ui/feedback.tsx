@@ -37,7 +37,7 @@ export function Banner({
     <div
       role={tone === "danger" || tone === "warning" ? "alert" : "status"}
       className={cn(
-        "flex items-start gap-3 rounded-input border px-4 py-3 text-body",
+        "flex flex-wrap items-start gap-x-3 gap-y-2 rounded-input border px-4 py-3 text-body",
         toneClasses[tone],
         className,
       )}
@@ -45,11 +45,11 @@ export function Banner({
       <span data-icon className="mt-0.5 shrink-0 [&_svg]:size-4" aria-hidden>
         {icon ?? toneIcon[tone]}
       </span>
-      <p className="min-w-0 flex-1">
+      <p className="min-w-0 flex-1 basis-56">
         {title && <strong className="font-semibold">{title} </strong>}
         {children}
       </p>
-      {action && <div className="shrink-0 text-[13px] font-medium">{action}</div>}
+      {action && <div className="shrink-0 text-[13px] font-medium max-sm:pl-7">{action}</div>}
     </div>
   );
 }

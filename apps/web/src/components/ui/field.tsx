@@ -28,7 +28,7 @@ export function Input({ className, suffix, invalid, ...props }: InputProps) {
   return (
     <div className="flex">
       {input}
-      <span className="inline-flex items-center rounded-r-input border border-l-0 border-line bg-subtle px-3 text-[13px] text-ink-2">
+      <span className="inline-flex items-center whitespace-nowrap rounded-r-input border border-l-0 border-line bg-subtle px-3 text-[13px] text-ink-2">
         {suffix}
       </span>
     </div>
@@ -178,7 +178,9 @@ export function TextareaField({
 }: FieldMeta &
   Omit<ComponentProps<"textarea">, "defaultValue"> & { maxLength: number; defaultValue?: string }) {
   const { id, describedBy, invalid } = useFieldIds({ hint, error }, ownId);
-  const [length, setLength] = useState(defaultValue.length);
+  const [typedLength, setTypedLength] = useState(defaultValue.length);
+  const controlled = props.value !== undefined;
+  const length = controlled ? String(props.value).length : typedLength;
   return (
     <Field
       id={id}
@@ -193,9 +195,9 @@ export function TextareaField({
         aria-describedby={describedBy}
         invalid={invalid}
         maxLength={maxLength}
-        defaultValue={defaultValue}
+        defaultValue={controlled ? undefined : defaultValue}
         onChange={(e) => {
-          setLength(e.target.value.length);
+          setTypedLength(e.target.value.length);
           onChange?.(e);
         }}
         {...props}

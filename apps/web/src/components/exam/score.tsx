@@ -123,11 +123,13 @@ export function ProblemTiles({
   problems,
   activeNumber,
   showMax = false,
+  scoreOnly = false,
   className,
 }: {
   problems: ProblemTile[];
   activeNumber?: number;
   showMax?: boolean;
+  scoreOnly?: boolean;
   className?: string;
 }) {
   return (
@@ -146,14 +148,18 @@ export function ProblemTiles({
               active && !tone && "border-solid border-transparent bg-accent-soft text-accent-ink",
             )}
           >
-            {p.number}
-            {p.score !== undefined && (
+            {scoreOnly && p.score !== undefined ? (
+              formatScore(p.score)
+            ) : (
+              p.number
+            )}
+            {!scoreOnly && p.score !== undefined && (
               <span className="font-medium">
                 · {formatScore(p.score)}
                 {showMax && `/${p.max}`}
               </span>
             )}
-            {tone === "success" && p.score === p.max && <Check className="size-3" aria-hidden />}
+            {!scoreOnly && tone === "success" && p.score === p.max && <Check className="size-3" aria-hidden />}
           </li>
         );
       })}

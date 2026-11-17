@@ -277,7 +277,9 @@ export const GROUPS: Group[] = [
 ];
 
 export type ReviewItem = {
+  studentId: string;
   student: string;
+  examId: string;
   exam: string;
   group: string;
   score: number;
@@ -287,10 +289,10 @@ export type ReviewItem = {
 };
 
 export const TO_REVIEW: ReviewItem[] = [
-  { student: "Kacper Wiśniewski", exam: "Strona wizytówka", group: "1C", score: 18, max: 20, risk: 72, reason: "Skok kodu +60 linii w 4 s" },
-  { student: "Julia Nowak", exam: "Instrukcje warunkowe", group: "3B", score: 27, max: 30, risk: 64, reason: "3 wyjścia z pełnego ekranu" },
-  { student: "Maja Zielińska", exam: "Strona wizytówka", group: "1C", score: 12, max: 20, risk: 18, reason: "Ocena ręczna: wygląd strony" },
-  { student: "Oliwer Kamiński", exam: "Strona wizytówka", group: "1C", score: 15, max: 20, risk: 34, reason: "Ocena ręczna: wygląd strony" },
+  { studentId: "s10", student: "Julia Mazur", examId: "e5", exam: "Instrukcje warunkowe", group: "3B", score: 73, max: 75, risk: 74, reason: "Próba wklejenia 214 znaków" },
+  { studentId: "s3", student: "Jakub Lewandowski", examId: "e5", exam: "Instrukcje warunkowe", group: "3B", score: 51, max: 75, risk: 68, reason: "Skok kodu +40 linii w 3 s" },
+  { studentId: "s7", student: "Szymon Dąbrowski", examId: "e4", exam: "Strona wizytówka", group: "1C", score: 20, max: 20, risk: 61, reason: "3 wyjścia z pełnego ekranu" },
+  { studentId: "s5", student: "Antoni Szymański", examId: "e4", exam: "Strona wizytówka", group: "1C", score: 14, max: 20, risk: 35, reason: "Ocena ręczna: wygląd strony" },
 ];
 
 export const ACTIVITY = [

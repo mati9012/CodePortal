@@ -94,7 +94,7 @@ export default function ResultsPage() {
                   <ScoreChip score={r.score} max={r.max} />
                 </td>
                 <td className="px-3 py-3 text-right max-md:ml-auto max-md:p-0">
-                  <Link href="/panel/testy/e4/wyniki" className={buttonClasses({ variant: "secondary", size: "sm" })}>
+                  <Link href={`/panel/testy/${r.examId}/wyniki/${r.studentId}`} className={buttonClasses({ variant: "secondary", size: "sm" })}>
                     Raport
                   </Link>
                 </td>
