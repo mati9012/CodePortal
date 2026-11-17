@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 import { Card } from "@/components/ui/surface";
 
-/** Sekcja kroku kreatora: tytuł + opis po lewej (desktop), pola po prawej. */
 export function WizardSection({
   title,
   description,

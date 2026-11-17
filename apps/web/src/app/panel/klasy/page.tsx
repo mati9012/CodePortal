@@ -9,7 +9,6 @@ import { GROUPS } from "@/lib/mock/panel";
 
 export const metadata: Metadata = { title: "Klasy i grupy · CodePortal" };
 
-/** F11 · Klasy i grupy. */
 export default function GroupsPage() {
   return (
     <>

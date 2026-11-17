@@ -35,7 +35,6 @@ const STEPS = [
   { label: "Wypróbuj test jako uczeń", done: false, href: "/panel/testy" },
 ];
 
-/** F1 · Pulpit organizatora (+ C2 checklista „Pierwsze kroki”). */
 export default function DashboardPage() {
   return (
     <>

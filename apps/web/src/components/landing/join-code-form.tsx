@@ -7,13 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/field";
 import { cn } from "@/lib/cn";
 
-/** Kod dostępu: 6 znaków A–Z / 0–9, wyświetlany jako `XXX-XXX`. */
 function formatCode(raw: string) {
   const chars = raw.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6);
   return chars.length > 3 ? `${chars.slice(0, 3)}-${chars.slice(3)}` : chars;
 }
 
-/** „Masz kod testu?” – wejście ucznia prosto ze strony głównej (→ /t/<kod>). */
 export function JoinCodeForm({ className }: { className?: string }) {
   const router = useRouter();
   const id = useId();

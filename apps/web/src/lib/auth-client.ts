@@ -1,6 +1,5 @@
 import { createAuthClient } from "better-auth/react";
 
-/** Klient Better Auth — endpointy w API pod /api/auth, sesja w ciasteczku httpOnly. */
 export const authClient = createAuthClient({
   baseURL: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000",
   fetchOptions: { credentials: "include" },
@@ -8,7 +7,6 @@ export const authClient = createAuthClient({
 
 type AuthError = { code?: string; status: number; message?: string };
 
-/** Komunikaty błędów Better Auth po polsku (stany ekranu B1 i rejestracji). */
 export function authErrorMessage(error: AuthError): string {
   if (error.status === 429) return "Za dużo prób. Odczekaj chwilę i spróbuj ponownie.";
   const code = error.code ?? "";
@@ -24,7 +22,6 @@ export function authErrorMessage(error: AuthError): string {
   return "Coś poszło nie tak. Spróbuj ponownie.";
 }
 
-/** Bezpieczny cel przekierowania po zalogowaniu: tylko ścieżki w obrębie aplikacji. */
 export function safeNext(next: string | null, fallback = "/panel") {
   return next && next.startsWith("/") && !next.startsWith("//") ? next : fallback;
 }

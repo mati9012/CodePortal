@@ -1,10 +1,7 @@
 import { useId } from "react";
 import { cn } from "@/lib/cn";
 
-/** Znak `</>` w niebieskim zaokrąglonym kwadracie. */
 export function LogoMark({ size = 28, className }: { size?: number; className?: string }) {
-  // Unikalne id gradientu: przy kilku logo na stronie (np. ukryty sidebar desktopowy)
-  // url(#…) wskazywałby na definicję w elemencie z display:none i znak by znikał.
   const gradient = `cp-logo-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
   return (
     <svg

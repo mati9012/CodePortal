@@ -11,10 +11,7 @@ const control =
   "disabled:cursor-not-allowed disabled:bg-subtle disabled:text-ink-3 " +
   "aria-invalid:border-danger aria-invalid:focus:ring-danger/20";
 
-// ── Kontrolki ───────────────────────────────────────────────────────────────
-
 type InputProps = ComponentProps<"input"> & {
-  /** Jednostka po prawej stronie pola, np. „min”. */
   suffix?: ReactNode;
   invalid?: boolean;
 };
@@ -75,23 +72,13 @@ export function Select({
   );
 }
 
-// ── Układ pola ──────────────────────────────────────────────────────────────
-
 type FieldMeta = {
   label?: ReactNode;
-  /** Podpowiedź pod polem („Widoczna dla uczniów na ekranie wejścia.”). */
   hint?: ReactNode;
-  /** Komunikat błędu — zastępuje podpowiedź i oznacza pole jako niepoprawne. */
   error?: ReactNode;
-  /** Prawa strona nagłówka pola, np. licznik znaków. */
   aside?: ReactNode;
 };
 
-/**
- * Etykieta + kontrolka + podpowiedź/błąd. `id` musi być równe `id` kontrolki;
- * komunikat ma identyfikator `${id}-msg` (podaj go w aria-describedby kontrolki).
- * Zwykle wygodniej użyć TextField / SelectField / TextareaField.
- */
 export function Field({
   id,
   label,
@@ -138,7 +125,6 @@ function useFieldIds(meta: FieldMeta, ownId?: string) {
   };
 }
 
-/** `className` stylizuje cały blok pola, `inputClassName` — samo pole. */
 export function TextField({
   label,
   hint,
@@ -179,7 +165,6 @@ export function SelectField({
   );
 }
 
-/** Textarea z licznikiem znaków w nagłówku pola („48 / 280”). */
 export function TextareaField({
   label,
   hint,

@@ -1,8 +1,3 @@
-/**
- * Dane przykładowe panelu nauczyciela — do czasu podpięcia API.
- * Kształt odpowiada tabelom z docs/SPEC.md (exams, problems), żeby podmiana była prosta.
- */
-
 export type ExamStatus = "draft" | "scheduled" | "live" | "review" | "finished";
 export type ExamMode = "test" | "contest";
 
@@ -12,15 +7,12 @@ export type Exam = {
   group: string;
   mode: ExamMode;
   status: ExamStatus;
-  /** ISO; dla szkiców data ostatniej edycji. */
   startsAt: string;
   durationMin: number;
   problems: number;
   participants: { joined: number; total: number };
-  /** Średni wynik w % (po zakończeniu). */
   average?: number;
   toReview?: number;
-  /** Uczniowie z ryzykiem ≥ 60 — sygnał do oceny nauczyciela. */
   flagged?: number;
   code?: string;
 };
@@ -152,7 +144,6 @@ export type Problem = {
   id: string;
   title: string;
   type: "io" | "unit" | "web";
-  /** Jeden z wariantów: `["python"]` albo zestaw łączony `["html", "css", "php"]`. */
   languages: Language[][];
   tags: string[];
   difficulty: 1 | 2 | 3;

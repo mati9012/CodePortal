@@ -18,10 +18,6 @@ const toneIcon: Record<FeedbackTone, ReactNode> = {
   danger: <CircleAlert />,
 };
 
-/**
- * Baner na całą szerokość („Wyniki niezatwierdzone – uczniowie ich jeszcze nie widzą.”).
- * `title` jest pogrubiony i wchodzi w tę samą linię co treść.
- */
 export function Banner({
   tone = "info",
   title,
@@ -58,13 +54,8 @@ export function Banner({
   );
 }
 
-/** Ikona dla banera utraty połączenia. */
 export const OfflineIcon = <WifiOff />;
 
-/**
- * Toast („Link skopiowany · Cofnij”). Komponent prezentacyjny — kolejkę
- * i pozycjonowanie doda warstwa powiadomień.
- */
 export function Toast({
   tone = "success",
   title,
@@ -118,10 +109,6 @@ export function Toast({
   );
 }
 
-/**
- * Okno modalne (prezentacja). `blocking` = bez zamykania kliknięciem w tło
- * (np. „Wyszedłeś z trybu pełnoekranowego”).
- */
 export function ModalPanel({
   title,
   description,
@@ -173,7 +160,6 @@ export function ModalPanel({
   );
 }
 
-/** Przyciemnione tło pod modalem. */
 export function ModalBackdrop({ className, ...props }: ComponentProps<"div">) {
   return (
     <div
@@ -183,7 +169,6 @@ export function ModalBackdrop({ className, ...props }: ComponentProps<"div">) {
   );
 }
 
-/** Szkielet ładowania — zachowuje układ treści. */
 export function Skeleton({ className, ...props }: ComponentProps<"div">) {
   return <div className={cn("animate-pulse rounded-tag bg-subtle", className)} {...props} />;
 }

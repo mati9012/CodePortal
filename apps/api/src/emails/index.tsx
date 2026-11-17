@@ -4,11 +4,9 @@ import type { ReactElement } from 'react';
 import ResetPassword from './reset-password.js';
 import VerifyEmail from './verify-email.js';
 
-/** Bit dołączany do każdego maila jako obraz inline (`cid:bit`). */
 export const BIT_ATTACHMENT = {
   filename: 'bit.png',
   cid: 'bit',
-  // dist/emails/index.js → src/emails/static (w obrazie Dockera kopiowane obok dist).
   path: fileURLToPath(new URL('../../src/emails/static/bit.png', import.meta.url)),
 };
 

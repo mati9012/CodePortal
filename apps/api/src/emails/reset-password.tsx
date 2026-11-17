@@ -3,7 +3,6 @@ import { ActionBlock, EmailLayout, Eyebrow } from './components/layout.js';
 
 export type ResetPasswordProps = { name: string; url: string; webUrl: string; bitSrc?: string };
 
-/** J2 · Reset hasła. */
 export default function ResetPassword({ name, url, webUrl, bitSrc }: ResetPasswordProps) {
   return (
     <EmailLayout preview="Link do ustawienia nowego hasła działa przez godzinę." webUrl={webUrl} bitSrc={bitSrc}>

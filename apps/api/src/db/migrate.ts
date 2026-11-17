@@ -1,5 +1,3 @@
-// Uruchamia migracje z katalogu drizzle/ (wygenerowane przez `pnpm db:generate`).
-// Używane przez usługę `migrate` w docker-compose: node dist/db/migrate.js
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import { resolve } from 'node:path';

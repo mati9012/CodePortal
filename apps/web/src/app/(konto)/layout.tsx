@@ -2,7 +2,6 @@ import Link from "next/link";
 import { Bit } from "@/components/brand/bit";
 import { Logo } from "@/components/brand/logo";
 
-/** Układ ekranów konta (B1–B8): formularz po lewej, Bit na panelu po prawej. */
 export default function AccountLayout({ children }: LayoutProps<"/">) {
   return (
     <div className="grid min-h-dvh flex-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)]">

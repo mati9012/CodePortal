@@ -37,13 +37,11 @@ const NAV = [
   { href: "/panel/ustawienia", label: "Ustawienia", icon: Settings },
 ];
 
-/** Rama aplikacji organizatora (DESIGN: lewy sidebar + górny pasek, treść na canvas). */
 export function AppShell({ children }: { children: ReactNode }) {
   const router = useRouter();
   const { data, isPending } = authClient.useSession();
   const [drawer, setDrawer] = useState(false);
 
-  // Ciasteczko było (proxy wpuścił), ale sesja wygasła albo została unieważniona.
   useEffect(() => {
     if (!isPending && !data) {
       router.replace(`/logowanie?next=${encodeURIComponent(window.location.pathname)}`);
@@ -63,12 +61,10 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex min-h-dvh flex-1 bg-canvas">
-      {/* Desktop: stały sidebar */}
       <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 border-r border-line bg-surface lg:block">
         {sidebar}
       </aside>
 
-      {/* Mobile: szuflada */}
       {drawer && (
         <div className="fixed inset-0 z-40 lg:hidden" role="dialog" aria-modal="true" aria-label="Menu">
           <button
@@ -143,13 +139,11 @@ function Sidebar({
         </Link>
       </div>
 
-      {/* usePathname to dane z adresu — w Suspense, żeby nie blokowały prerenderu ramki. */}
       <Suspense fallback={<NavList pathname={null} onNavigate={onNavigate} />}>
         <ActiveNav onNavigate={onNavigate} />
       </Suspense>
 
       <div className="flex flex-col gap-2 border-t border-line p-3">
-        {/* Przełącznik organizacji — na razie jedna szkoła (TODO: B11/G organizacje). */}
         <button
           type="button"
           className="flex items-center gap-3 rounded-input px-2 py-2 text-left transition-colors hover:bg-subtle"

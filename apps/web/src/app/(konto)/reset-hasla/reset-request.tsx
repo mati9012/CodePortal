@@ -8,7 +8,6 @@ import { Banner } from "@/components/ui/feedback";
 import { TextField } from "@/components/ui/field";
 import { authClient, authErrorMessage } from "@/lib/auth-client";
 
-/** B6–B7: prośba o link. Zawsze ta sama odpowiedź — nie zdradzamy, czy konto istnieje. */
 export function ResetRequest() {
   const [loading, setLoading] = useState(false);
   const [sentTo, setSentTo] = useState<string | null>(null);

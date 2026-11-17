@@ -22,7 +22,6 @@ function useTabState({ options, value, defaultValue, onChange }: TabsBaseProps) 
     if (value === undefined) setInner(v);
     onChange?.(v);
   };
-  // Strzałki przełączają zakładki (wzorzec WAI-ARIA tabs).
   const onKeyDown = (e: KeyboardEvent, index: number) => {
     if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
     e.preventDefault();
@@ -39,7 +38,6 @@ function useTabState({ options, value, defaultValue, onChange }: TabsBaseProps) 
   return { current, select, refs, onKeyDown };
 }
 
-/** Zakładki z podkreśleniem („Treść · Testy 12 · Ustawienia”). */
 export function Tabs(props: TabsBaseProps) {
   const { options, className } = props;
   const { current, select, refs, onKeyDown } = useTabState(props);
@@ -49,8 +47,6 @@ export function Tabs(props: TabsBaseProps) {
       role="tablist"
       aria-label={props["aria-label"]}
       className={cn(
-        // Linia bazowa jako cień wewnętrzny — podkreślenie aktywnej zakładki leży na niej
-        // także przy przewijaniu (ujemny margines zostałby przycięty przez overflow).
         "flex gap-5 overflow-x-auto shadow-[inset_0_-1px_0_var(--cp-border)] [scrollbar-width:none]",
         className,
       )}
@@ -97,7 +93,6 @@ export function Tabs(props: TabsBaseProps) {
   );
 }
 
-/** Przełącznik segmentowy („Konsola · Przykłady · Zgłoszenia”, „Jasny · Ciemny”). */
 export function SegmentedControl(props: TabsBaseProps & { size?: "sm" | "md" }) {
   const { options, className, size = "md" } = props;
   const { current, select, refs, onKeyDown } = useTabState(props);

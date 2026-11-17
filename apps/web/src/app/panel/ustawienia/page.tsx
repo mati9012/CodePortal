@@ -4,7 +4,6 @@ import { SettingsForm } from "./settings-form";
 
 export const metadata: Metadata = { title: "Ustawienia · CodePortal" };
 
-/** G1 · Profil, wygląd i domyślne ustawienia testów. */
 export default function SettingsPage() {
   return (
     <>

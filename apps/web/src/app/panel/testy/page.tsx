@@ -7,7 +7,6 @@ import { ExamList } from "./exam-list";
 
 export const metadata: Metadata = { title: "Testy i konkursy · CodePortal" };
 
-/** F2 · Lista testów: zakładki statusów, filtry, menu wiersza. */
 export default function ExamsPage() {
   return (
     <>

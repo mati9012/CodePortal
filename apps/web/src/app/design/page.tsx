@@ -151,7 +151,6 @@ function ButtonMatrix() {
   );
 }
 
-/** `scope` rozróżnia grupy radio, gdy galeria jest na stronie dwa razy. */
 function ComponentGallery({ scope }: { scope: string }) {
   return (
     <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">

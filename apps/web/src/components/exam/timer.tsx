@@ -2,11 +2,6 @@ import { Check, Clock, CloudOff, LoaderCircle } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { formatClock } from "./format";
 
-/**
- * Licznik czasu testu. Czas liczy serwer — komponent tylko wyświetla
- * przekazaną liczbę sekund (odświeżaniem zajmie się widok testu).
- * Kolory: < 10 min bursztynowy, < 5 min czerwony, 0 — „Czas minął”.
- */
 export function Timer({
   secondsLeft,
   warnAt = 10 * 60,
@@ -54,7 +49,6 @@ export type AutosaveState =
   | { kind: "saving" }
   | { kind: "offline" };
 
-/** „✓ Zapisano 2 s temu” · „Zapisywanie…” · „Brak połączenia – zapisano lokalnie”. */
 export function AutosaveStatus({ state, className }: { state: AutosaveState; className?: string }) {
   return (
     <span

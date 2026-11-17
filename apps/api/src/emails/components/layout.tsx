@@ -15,19 +15,12 @@ import type { ReactNode } from 'react';
 import { emailTheme } from './theme.js';
 
 export type EmailLayoutProps = {
-  /** Tekst podglądu w skrzynce (obok tematu). */
   preview: string;
-  /** Adres strony (WEB_ORIGIN) do linków w stopce. */
   webUrl: string;
-  /**
-   * Źródło grafiki Bita. Przy wysyłce `cid:bit` (załącznik inline, działa też lokalnie),
-   * w podglądzie `email dev` plik ze `src/emails/static`.
-   */
   bitSrc?: string;
   children: ReactNode;
 };
 
-/** Wspólna rama e-maili: logo, karta z Bitem na gradiencie jak w panelu logowania, stopka. */
 export function EmailLayout({ preview, webUrl, bitSrc = '/static/bit.png', children }: EmailLayoutProps) {
   const host = webUrl.replace(/^https?:\/\//, '');
   return (
@@ -45,7 +38,6 @@ export function EmailLayout({ preview, webUrl, bitSrc = '/static/bit.png', child
         <Preview>{preview}</Preview>
         <Body className="m-0 bg-canvas py-10 font-sans">
           <Container className="mx-auto w-full max-w-[560px] px-4">
-            {/* Logo: znak </> w niebieskim kwadracie + nazwa (bez SVG — Gmail go nie pokaże). */}
             <Section className="mb-6 px-1">
               <table role="presentation" cellPadding={0} cellSpacing={0}>
                 <tbody>
@@ -62,7 +54,6 @@ export function EmailLayout({ preview, webUrl, bitSrc = '/static/bit.png', child
             </Section>
 
             <Section className="overflow-hidden rounded-[20px] border border-solid border-line bg-surface">
-              {/* Pas z Bitem na miękkim gradiencie akcent → mięta */}
               <Section
                 className="bg-accent-soft px-8 pb-6 pt-9 text-center"
                 style={{ backgroundImage: 'linear-gradient(135deg, #eef2ff 0%, #f0fdfa 100%)' }}
@@ -100,7 +91,6 @@ export function EmailLayout({ preview, webUrl, bitSrc = '/static/bit.png', child
   );
 }
 
-/** Etykieta nad tytułem, jak `Eyebrow` na stronie. */
 export function Eyebrow({ children }: { children: ReactNode }) {
   return (
     <Text className="m-0 mb-2 text-[12px] font-semibold uppercase leading-[16px] tracking-[0.08em] text-accent-ink">
@@ -109,7 +99,6 @@ export function Eyebrow({ children }: { children: ReactNode }) {
   );
 }
 
-/** Akcja główna + zapasowy link pod kreską. */
 export function ActionBlock({ label, url, note }: { label: string; url: string; note: string }) {
   return (
     <>

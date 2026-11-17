@@ -8,7 +8,6 @@ const NAV = [
   { href: "/#pytania", label: "Pytania" },
 ];
 
-/** Nagłówek stron publicznych (A1, A2, A5, A6). */
 export function SiteHeader() {
   return (
     <header className="sticky top-0 z-30 border-b border-line bg-surface/85 backdrop-blur-md">

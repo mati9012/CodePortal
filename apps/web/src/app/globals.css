@@ -1,19 +1,8 @@
 @import "tailwindcss";
 
-/*
- * CodePortal — design system 2.0 (zob. docs/DESIGN.md)
- *
- * Motyw: atrybut data-theme="light" | "dark" na <html> albo na dowolnym
- * kontenerze (np. widok testu jest zawsze ciemny). Bez atrybutu obowiązuje
- * motyw systemu. Komponenty używają wyłącznie tokenów semantycznych
- * (bg-canvas, text-ink, border-line, bg-success-soft…), więc same przełączają się z motywem.
- */
-
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
-/* ── Tokeny stałe (te same w obu motywach) ───────────────────────────────── */
 @theme {
-  /* Akcja · Blue */
   --color-primary-50: #eef2ff;
   --color-primary-100: #dfe6ff;
   --color-primary-300: #9ab2ff;
@@ -21,7 +10,6 @@
   --color-primary-600: #2447e0;
   --color-primary-800: #1a36b8;
 
-  /* Marka · Mint (z Bita) */
   --color-mint-50: #f0fdfa;
   --color-mint-100: #ccfbf1;
   --color-mint-300: #5eead4;
@@ -29,7 +17,6 @@
   --color-mint-700: #0f766e;
   --color-mint-900: #0b2a28;
 
-  /* Typografia — rodziny ustawia next/font w layout.tsx */
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-display: var(--font-jakarta), var(--font-inter), ui-sans-serif, sans-serif;
   --font-mono: var(--font-jetbrains), ui-monospace, "SFMono-Regular", monospace;
@@ -42,7 +29,6 @@
   --text-h1--line-height: 2.5rem;
   --text-h1--letter-spacing: -0.025em;
   --text-h1--font-weight: 800;
-  /* H2 nie ma w projekcie — wartość pośrednia między H1 a H3 */
   --text-h2: 1.5rem;
   --text-h2--line-height: 2rem;
   --text-h2--letter-spacing: -0.02em;
@@ -55,20 +41,17 @@
   --text-body--line-height: 1.375rem;
   --text-code: 0.875rem;
   --text-code--line-height: 1.375rem;
-  /* Etykiety sekcji: „ZADANIE 2 Z 4 · 30 PKT” */
   --text-label: 0.6875rem;
   --text-label--line-height: 1rem;
   --text-label--letter-spacing: 0.08em;
   --text-label--font-weight: 600;
 
-  /* Kształty */
   --radius-tag: 8px;
   --radius-input: 10px;
   --radius-card: 14px;
   --radius-modal: 20px;
 }
 
-/* ── Tokeny semantyczne (zależne od motywu) ──────────────────────────────── */
 @theme inline {
   --color-canvas: var(--cp-canvas);
   --color-surface: var(--cp-surface);
@@ -84,7 +67,6 @@
   --color-accent-ink: var(--cp-accent-ink);
   --color-on-accent: #ffffff;
 
-  /* Statusy i werdykty: solid / soft (tło) / ink (tekst na soft) */
   --color-success: var(--cp-success);
   --color-success-soft: var(--cp-success-soft);
   --color-success-ink: var(--cp-success-ink);
@@ -115,7 +97,6 @@
   --shadow-lg: var(--cp-shadow-lg);
 }
 
-/* Jasny */
 :root,
 [data-theme="light"] {
   color-scheme: light;
@@ -158,8 +139,6 @@
   --cp-shadow-lg: 0 20px 48px rgb(15 23 42 / 0.16), 0 6px 16px rgb(15 23 42 / 0.06);
 }
 
-/* Ciemny (IDE) — te same wartości w dwóch miejscach: wybór jawny
-   i motyw systemu (gdy użytkownik nie wybrał jasnego). Zmieniaj oba bloki. */
 [data-theme="dark"] {
   color-scheme: dark;
   --cp-canvas: #090b12;
@@ -241,7 +220,6 @@
   }
 }
 
-/* ── Baza ────────────────────────────────────────────────────────────────── */
 @layer base {
   html {
     -webkit-font-smoothing: antialiased;
@@ -256,7 +234,6 @@
     line-height: var(--text-body--line-height);
   }
 
-  /* Kontener z wymuszonym motywem dostaje własne tło i kolor tekstu */
   [data-theme] {
     color: var(--cp-text);
   }

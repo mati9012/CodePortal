@@ -25,8 +25,6 @@ export function LoginForm() {
     setNotice(null);
     const { error } = await authClient.signIn.email({
       email,
-      // Bez callbackURL: z nim klient sam przekierowałby po sukcesie. Link weryfikacyjny
-      // wysłany przy logowaniu niepotwierdzonego konta i tak prowadzi do /weryfikacja (API).
       password: String(form.get("password")),
     });
     setLoading(false);

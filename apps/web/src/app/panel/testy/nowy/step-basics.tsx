@@ -14,7 +14,6 @@ const DURATIONS = [
   { min: 90, label: "Dwie lekcje" },
 ];
 
-/** Krok 1 · Podstawy. */
 export function StepBasics({ draft, update, errors }: StepProps) {
   return (
     <>

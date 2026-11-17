@@ -37,7 +37,6 @@ const sizes: Record<ButtonSize, string> = {
 export type ButtonProps = ComponentProps<"button"> & {
   variant?: ButtonVariant;
   size?: ButtonSize;
-  /** Pokazuje spinner i blokuje przycisk; `loadingText` zastępuje etykietę („Wysyłanie…”). */
   loading?: boolean;
   loadingText?: ReactNode;
   icon?: ReactNode;
@@ -80,7 +79,6 @@ export function Button({
   );
 }
 
-/** Kwadratowy przycisk z samą ikoną — wymaga etykiety dla czytników ekranu. */
 export function IconButton({
   label,
   variant = "ghost",

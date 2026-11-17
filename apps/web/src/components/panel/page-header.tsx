@@ -2,7 +2,6 @@ import { ChevronRight } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-/** Okruszki nad tytułem H1, akcje po prawej (DESIGN: layout aplikacji organizatora). */
 export function PageHeader({
   title,
   description,

@@ -10,7 +10,8 @@ import { Card } from "@/components/ui/surface";
 import { GROUPS } from "@/lib/mock/panel";
 import type { Draft } from "./draft";
 
-/** F4 · Opublikowano: kod, link i QR do pokazania klasie. */
+const COPIED_FEEDBACK_MS = 1500;
+
 export function Published({ draft, code, onReset }: { draft: Draft; code: string; onReset: () => void }) {
   const link = `${window.location.origin}/t/${code}`;
   const group = GROUPS.find((g) => g.id === draft.groupId);
@@ -72,7 +73,7 @@ function CopyButton({ value, label }: { value: string; label: string }) {
       onClick={async () => {
         await navigator.clipboard?.writeText(value);
         setDone(true);
-        setTimeout(() => setDone(false), 1500);
+        setTimeout(() => setDone(false), COPIED_FEEDBACK_MS);
       }}
     >
       {done ? <Check className="text-success-ink" /> : <Copy />}

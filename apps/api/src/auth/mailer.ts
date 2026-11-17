@@ -4,10 +4,6 @@ import { BIT_ATTACHMENT, type RenderedEmail } from '../emails/index.js';
 
 const log = new Logger('Mailer');
 
-/**
- * Wysyłka e-maili (szablony React Email w src/emails, podgląd: `pnpm email:dev`).
- * Bez SMTP_URL (dev) treść i link lądują w logu API zamiast w skrzynce.
- */
 let transport: Transporter | null | undefined;
 
 function getTransport() {

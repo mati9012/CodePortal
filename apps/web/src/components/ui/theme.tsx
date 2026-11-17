@@ -21,7 +21,6 @@ export function setThemePreference(pref: ThemePreference) {
     if (pref === "system") localStorage.removeItem(STORAGE_KEY);
     else localStorage.setItem(STORAGE_KEY, pref);
   } catch {
-    // brak dostępu do localStorage (tryb prywatny) — motyw działa do odświeżenia
   }
   listeners.forEach((l) => l());
 }
@@ -37,7 +36,6 @@ export function useThemePreference(): ThemePreference {
   );
 }
 
-/** Przełącznik Jasny / Ciemny / Systemowy (Ustawienia → Wygląd). */
 export function ThemeSwitcher({ withSystem = true }: { withSystem?: boolean }) {
   const pref = useThemePreference();
   const options = [

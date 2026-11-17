@@ -11,7 +11,6 @@ const chipTone: Record<Tone, string> = {
   neutral: "bg-subtle text-ink-2",
 };
 
-/** Kolor wyniku wg procentu punktów (≥ 70% zielony, ≥ 40% bursztynowy, niżej czerwony). */
 export function scoreTone(score: number, max: number): Tone {
   if (max <= 0) return "neutral";
   const pct = score / max;
@@ -20,7 +19,6 @@ export function scoreTone(score: number, max: number): Tone {
   return "danger";
 }
 
-/** „92 / 100”, „21 / 30 pkt”. */
 export function ScoreChip({
   score,
   max,
@@ -46,11 +44,8 @@ export function ScoreChip({
   );
 }
 
-// ── Ryzyko samodzielności ───────────────────────────────────────────────────
-
 export type RiskLevel = "low" | "medium" | "high";
 
-/** Progi z projektu: Wysokie od 60 (próg oznaczenia w wynikach), Średnie od 30. */
 export function riskLevel(score: number): RiskLevel {
   if (score >= 60) return "high";
   if (score >= 30) return "medium";
@@ -63,17 +58,12 @@ const RISK_META: Record<RiskLevel, { label: string; bar: string; text: string }>
   high: { label: "Wysokie", bar: "bg-danger", text: "text-danger-ink" },
 };
 
-/**
- * Wskaźnik ryzyka 0–100. To sygnał dla nauczyciela, nie werdykt —
- * etykieta mówi o ryzyku, nigdy o „ściąganiu”.
- */
 export function RiskMeter({
   score,
   variant = "bar",
   className,
 }: {
   score: number;
-  /** `bar` — pasek + liczba + etykieta; `compact` — krótki pasek do tabel. */
   variant?: "bar" | "compact";
   className?: string;
 }) {
@@ -103,8 +93,6 @@ export function RiskMeter({
   );
 }
 
-// ── Status uczestnika ───────────────────────────────────────────────────────
-
 export type ParticipantStatus = "online" | "offline" | "idle" | "finished" | "not_started";
 
 const STATUS_META: Record<ParticipantStatus, { label: string; dot: string }> = {
@@ -125,16 +113,12 @@ export function StatusDot({ status, className }: { status: ParticipantStatus; cl
   );
 }
 
-// ── Kafelki zadań w nagłówku testu ──────────────────────────────────────────
-
 export type ProblemTile = {
   number: number;
-  /** Punkty z najlepszego/ostatniego zgłoszenia; brak = nie zgłoszono. */
   score?: number;
   max: number;
 };
 
-/** „1 · 20/20  2 · 21/30  3  4” — aktywne zadanie z obrysem. */
 export function ProblemTiles({
   problems,
   activeNumber,

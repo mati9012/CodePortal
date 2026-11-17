@@ -5,15 +5,12 @@ import { accounts, authSessions, users, verifications } from '../db/schema.js';
 import { emails } from '../emails/index.js';
 import { sendMail } from './mailer.js';
 
-/**
- * Logowanie kont nauczycieli/organizatorów (SPEC: moduł auth, DESIGN: ekrany B1–B8).
- * Endpointy pod `${BETTER_AUTH_URL}/api/auth/*` — montowane w main.ts przed parserem JSON.
- * Uczniowie nie mają kont: wchodzą kodem testu i dostają osobny token sesji egzaminu.
- */
+const DAY_IN_SECONDS = 60 * 60 * 24;
+const SESSION_TTL_SECONDS = 30 * DAY_IN_SECONDS;
+const SESSION_REFRESH_SECONDS = DAY_IN_SECONDS;
+
 export function createAuth(db: Db) {
   const webOrigin = process.env.WEB_ORIGIN ?? 'http://localhost:3000';
-  // Front i API na subdomenach tej samej domeny (np. codeportal.mkucio.pl + api.mkucio.pl):
-  // ciasteczko z Domain=mkucio.pl widzą oba. Lokalnie zbędne — ciasteczka nie zależą od portu.
   const cookieDomain = process.env.COOKIE_DOMAIN;
 
   return betterAuth({
@@ -27,7 +24,6 @@ export function createAuth(db: Db) {
     }),
     user: {
       additionalFields: {
-        // Rolę i szkołę ustawia serwer (onboarding, zaproszenia) — nie formularz rejestracji.
         role: { type: 'string', required: false, defaultValue: 'organizer', input: false },
         orgId: { type: 'string', required: false, input: false },
       },
@@ -46,18 +42,16 @@ export function createAuth(db: Db) {
       sendOnSignIn: true,
       autoSignInAfterVerification: true,
       sendVerificationEmail: async ({ user, url }) => {
-        // Każdy link (po rejestracji, przy logowaniu, ponowna wysyłka) kończy na ekranie B5.
         const link = new URL(url);
         link.searchParams.set('callbackURL', `${webOrigin}/weryfikacja`);
         await sendMail(user.email, emails.verifyEmail(user.name, link.toString()));
       },
     },
     session: {
-      expiresIn: 60 * 60 * 24 * 30, // 30 dni
-      updateAge: 60 * 60 * 24, // przedłużana raz na dobę aktywności
+      expiresIn: SESSION_TTL_SECONDS,
+      updateAge: SESSION_REFRESH_SECONDS,
     },
     rateLimit: {
-      // Domyślnie włączony tylko w produkcji; logowanie ma ostrzejszy limit.
       customRules: {
         '/sign-in/email': { window: 60, max: 5 },
         '/request-password-reset': { window: 300, max: 3 },

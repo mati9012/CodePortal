@@ -16,7 +16,6 @@ const VISIBILITY: { value: ResultsVisibility; title: string; description: string
 
 const GRADE_COLOR = ["bg-danger", "bg-orange", "bg-warning", "bg-success/70", "bg-success", "bg-accent"];
 
-/** Krok 4 · Ocenianie i publikacja. */
 export function StepGrading({ draft, update, errors }: StepProps) {
   const max = totalPoints(draft.items);
   const t = draft.thresholds;
@@ -68,7 +67,6 @@ export function StepGrading({ draft, update, errors }: StepProps) {
 
       {draft.mode === "test" && (
         <WizardSection title="Progi ocen" description={`Procent punktów potrzebny na ocenę. Przy ${max || "…"} pkt w teście.`}>
-          {/* Pasek skali 1–6 */}
           <div className="flex h-8 overflow-hidden rounded-input" aria-hidden>
             {bounds.slice(0, -1).map((from, i) => {
               const width = Math.max(0, bounds[i + 1]! - from);

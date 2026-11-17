@@ -14,7 +14,6 @@ import type { Auth } from './auth.js';
 export type AuthSession = NonNullable<Awaited<ReturnType<Auth['api']['getSession']>>>;
 type AuthedRequest = Request & { auth?: AuthSession };
 
-/** Wpuszcza tylko zalogowanych (ciasteczko sesji Better Auth). Użycie: `@UseGuards(AuthGuard)`. */
 @Injectable()
 export class AuthGuard implements CanActivate {
   constructor(@Inject(AUTH) private readonly auth: Auth) {}
@@ -28,7 +27,6 @@ export class AuthGuard implements CanActivate {
   }
 }
 
-/** Zalogowany użytkownik w kontrolerze chronionym przez AuthGuard: `@CurrentUser() user`. */
 export const CurrentUser = createParamDecorator(
   (_: unknown, ctx: ExecutionContext) =>
     ctx.switchToHttp().getRequest<AuthedRequest>().auth?.user,

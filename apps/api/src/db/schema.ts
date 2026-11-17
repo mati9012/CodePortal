@@ -1,5 +1,3 @@
-// Model danych CodePortal — zob. docs/SPEC.md, sekcja „Model danych”.
-// Klucze w TS są camelCase; kolumny w bazie snake_case (opcja `casing: 'snake_case'`).
 import { relations } from 'drizzle-orm';
 import {
   bigint,
@@ -25,18 +23,13 @@ const updatedAt = () =>
     .defaultNow()
     .$onUpdate(() => new Date());
 
-/**
- * Kod zawsze jako lista plików: zadanie jednojęzyczne ma jeden plik (`main.py`),
- * zadanie webowe kilka (`index.php`, `style.css`…). Język pliku wynika z rozszerzenia.
- */
 export type CodeFile = { path: string; content: string };
-/** Pliki startowe per wariant języka, np. `{ "python": [...], "html+css+php": [...] }`. */
 export type StarterCode = Record<string, CodeFile[]>;
+export type EditorEventType = 'delta' | 'paste_blocked' | 'blur' | 'fullscreen_exit' | 'run';
+export type SimilarityMethod = 'tokens' | 'ast' | 'ai_reference';
 
-// ── Enumy ────────────────────────────────────────────────────────────────────
 export const role = pgEnum('role', ['organizer', 'participant', 'admin']);
 export const orgType = pgEnum('org_type', ['school', 'company']);
-// io: wejście/wyjście · unit: testy jednostkowe · web: strona (HTML/CSS/JS/PHP) testowana w Playwright
 export const problemType = pgEnum('problem_type', ['io', 'unit', 'web']);
 export const checkerType = pgEnum('checker_type', [
   'exact',
@@ -62,7 +55,6 @@ export const sessionStatus = pgEnum('session_status', [
 export const submissionStatus = pgEnum('submission_status', ['queued', 'running', 'done', 'error']);
 export const verdict = pgEnum('verdict', ['OK', 'WA', 'TLE', 'MLE', 'RE', 'CE']);
 
-// ── Tabele ───────────────────────────────────────────────────────────────────
 export const organizations = pgTable('organizations', {
   id: id(),
   name: text().notNull(),
@@ -72,8 +64,6 @@ export const organizations = pgTable('organizations', {
   createdAt: createdAt(),
 });
 
-// users + auth_sessions + accounts + verifications: tabele Better Auth (src/auth/auth.ts).
-// Nazwy pól TS muszą zgadzać się z modelem Better Auth; hasło trzyma `accounts.password`.
 export const users = pgTable('users', {
   id: id(),
   email: text().notNull().unique(),
@@ -86,7 +76,6 @@ export const users = pgTable('users', {
   updatedAt: updatedAt(),
 });
 
-/** Sesje logowania kont (nauczyciel/organizator). Nie mylić z `sessions` — podejściami do testu. */
 export const authSessions = pgTable(
   'auth_sessions',
   {
@@ -104,7 +93,6 @@ export const authSessions = pgTable(
   (t) => [index().on(t.userId)],
 );
 
-/** Sposoby logowania użytkownika: `credential` (e-mail + hasło) oraz później google/microsoft. */
 export const accounts = pgTable(
   'accounts',
   {
@@ -127,7 +115,6 @@ export const accounts = pgTable(
   (t) => [index().on(t.userId)],
 );
 
-/** Tokeny weryfikacji e-maila i resetu hasła. */
 export const verifications = pgTable(
   'verifications',
   {
@@ -148,7 +135,6 @@ export const problems = pgTable('problems', {
     .references(() => users.id),
   title: text().notNull(),
   statementMd: text().notNull(),
-  // Dozwolone języki; zestaw łączony zapisany z plusami, np. 'html+css+php'.
   languages: text().array().notNull().default([]),
   starterCode: jsonb().$type<StarterCode>(),
   timeLimitMs: integer().notNull().default(1000),
@@ -168,7 +154,6 @@ export const testCases = pgTable('test_cases', {
   groupNo: integer().notNull().default(0),
   input: text().notNull().default(''),
   expectedOutput: text().notNull().default(''),
-  /** Zadania `web`: skrypt testu strony (Playwright) zamiast input/expectedOutput. */
   script: text(),
   points: integer().notNull().default(1),
   isSample: boolean().notNull().default(false),
@@ -254,17 +239,13 @@ export const codeSnapshots = pgTable(
   (t) => [index().on(t.sessionId, t.problemId, t.createdAt)],
 );
 
-// editor_events: najwięcej zapisów w systemie. W bazie tabela ma być
-// partycjonowana po dniu (PARTITION BY RANGE (ts)) — drizzle-kit tego nie generuje,
-// więc po `db:generate` dopisz partycjonowanie ręcznie w pliku migracji
-// (dlatego PK zawiera `ts`, a brak FK do sessions).
 export const editorEvents = pgTable(
   'editor_events',
   {
     id: bigint({ mode: 'number' }).generatedAlwaysAsIdentity(),
     sessionId: uuid().notNull(),
     ts: timestamp({ withTimezone: true }).notNull(),
-    type: text().notNull(), // delta | paste_blocked | blur | fullscreen_exit | run | ...
+    type: text().$type<EditorEventType>().notNull(),
     payload: jsonb(),
   },
   (t) => [primaryKey({ columns: [t.id, t.ts] }), index().on(t.sessionId, t.ts)],
@@ -341,12 +322,11 @@ export const similarityPairs = pgTable(
       .notNull()
       .references(() => submissions.id, { onDelete: 'cascade' }),
     score: real().notNull(),
-    method: text().notNull(), // tokens | ast | ai_reference
+    method: text().$type<SimilarityMethod>().notNull(),
   },
   (t) => [index().on(t.examId, t.problemId)],
 );
 
-// ── Relacje (dla db.query.*) ─────────────────────────────────────────────────
 export const organizationsRelations = relations(organizations, ({ many }) => ({
   users: many(users),
 }));

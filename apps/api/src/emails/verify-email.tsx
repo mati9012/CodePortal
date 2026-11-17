@@ -3,7 +3,6 @@ import { ActionBlock, EmailLayout, Eyebrow } from './components/layout.js';
 
 export type VerifyEmailProps = { name: string; url: string; webUrl: string; bitSrc?: string };
 
-/** J1 · Potwierdź e-mail — po rejestracji i przy logowaniu na niepotwierdzone konto. */
 export default function VerifyEmail({ name, url, webUrl, bitSrc }: VerifyEmailProps) {
   return (
     <EmailLayout preview="Jedno kliknięcie i możesz tworzyć pierwszy test." webUrl={webUrl} bitSrc={bitSrc}>

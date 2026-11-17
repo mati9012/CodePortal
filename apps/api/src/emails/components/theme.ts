@@ -1,9 +1,5 @@
 import { pixelBasedPreset, type TailwindConfig } from '@react-email/components';
 
-/**
- * Tokeny jasnego motywu strony (apps/web/src/app/globals.css) przeniesione do e-maili.
- * E-maile są zawsze jasne — klienci poczty i tak po swojemu odwracają kolory w trybie ciemnym.
- */
 export const emailTheme: TailwindConfig = {
   presets: [pixelBasedPreset],
   theme: {

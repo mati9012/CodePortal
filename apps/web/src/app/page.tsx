@@ -23,8 +23,6 @@ export const metadata: Metadata = {
     "Uczniowie piszą kod w edytorze jak w IDE – bez AI. CodePortal uruchamia go na testach, wystawia punkty i pokazuje, jak powstawało rozwiązanie.",
 };
 
-// ── Treść ───────────────────────────────────────────────────────────────────
-
 const STEPS = [
   {
     title: "Stwórz zadanie",
@@ -79,7 +77,6 @@ const FEATURES: {
 
 const LANGUAGES = ["HTML", "CSS", "JavaScript", "Python", "Java", "C#", "C++", "PHP"];
 
-// TODO: ceny planów Szkoła i Organizator – do ustalenia (w projekcie „[CENA]”).
 const PLANS: {
   name: string;
   price: string;
@@ -138,8 +135,6 @@ const FAQ = [
   },
 ];
 
-// ── Strona ──────────────────────────────────────────────────────────────────
-
 const container = "mx-auto w-full max-w-6xl px-4 sm:px-8";
 
 function SectionTitle({ children, sub }: { children: ReactNode; sub?: ReactNode }) {
@@ -158,7 +153,6 @@ export default function Home() {
     <>
       <SiteHeader />
       <main className="flex-1">
-        {/* Hero */}
         <section className="relative overflow-hidden bg-[radial-gradient(60%_80%_at_80%_30%,rgb(20_184_166/0.12),transparent_70%),radial-gradient(50%_60%_at_10%_0%,rgb(51_92_255/0.10),transparent_70%)]">
           <div className={cn(container, "grid items-center gap-12 py-14 sm:py-20 lg:grid-cols-[1.05fr_1fr]")}>
             <div className="min-w-0">
@@ -188,7 +182,6 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Trzy kroki */}
         <section className="border-y border-line bg-surface py-16 sm:py-20">
           <div className={container}>
             <SectionTitle>Trzy kroki do pierwszego sprawdzianu</SectionTitle>
@@ -206,7 +199,6 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Funkcje */}
         <section id="funkcje" className="scroll-mt-16 py-16 sm:py-24">
           <div className={cn(container, "flex flex-col gap-20 sm:gap-28")}>
             {FEATURES.map((f, i) => (
@@ -232,7 +224,6 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Języki */}
         <section aria-label="Języki programowania" className="border-y border-line bg-surface py-8">
           <div className={cn(container, "flex flex-wrap items-center justify-center gap-3")}>
             <span className="mr-2 text-body text-ink-2">Języki programowania:</span>
@@ -251,7 +242,6 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Cennik */}
         <section id="cennik" className="scroll-mt-16 py-16 sm:py-24">
           <div className={container}>
             <SectionTitle sub="Zacznij za darmo. Faktura VAT dla szkół.">Cennik</SectionTitle>
@@ -299,7 +289,6 @@ export default function Home() {
           </div>
         </section>
 
-        {/* FAQ */}
         <section id="pytania" className="scroll-mt-16 pb-16 sm:pb-24">
           <div className="mx-auto w-full max-w-3xl px-4 sm:px-8">
             <SectionTitle>Częste pytania</SectionTitle>
@@ -324,7 +313,6 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Końcowe CTA */}
         <section className={cn(container, "pb-16")}>
           <div className="relative flex overflow-hidden rounded-[24px] bg-[#090B12] bg-[radial-gradient(45%_90%_at_15%_110%,rgb(51_92_255/0.45),transparent_70%),radial-gradient(40%_90%_at_90%_0%,rgb(20_184_166/0.35),transparent_70%)] px-6 pt-10 text-white sm:px-12 md:items-center">
             <div className="relative z-10 pb-10 md:max-w-[60%]">

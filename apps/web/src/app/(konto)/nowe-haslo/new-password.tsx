@@ -9,7 +9,6 @@ import { Banner } from "@/components/ui/feedback";
 import { TextField } from "@/components/ui/field";
 import { authClient, authErrorMessage } from "@/lib/auth-client";
 
-/** B8: tu przekierowuje link z e-maila resetu (`?token=…` albo `?error=INVALID_TOKEN`). */
 export function NewPassword() {
   const params = useSearchParams();
   const token = params.get("token");

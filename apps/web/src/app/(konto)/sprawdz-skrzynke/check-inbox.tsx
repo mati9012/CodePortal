@@ -11,7 +11,6 @@ import { authClient, authErrorMessage } from "@/lib/auth-client";
 
 const COOLDOWN = 60;
 
-/** B4: po rejestracji — link wysłany, można poprosić o kolejny co minutę. */
 export function CheckInbox() {
   const email = useSearchParams().get("email") ?? "";
   const [wait, setWait] = useState(COOLDOWN);

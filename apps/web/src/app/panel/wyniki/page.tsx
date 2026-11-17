@@ -14,7 +14,6 @@ export const metadata: Metadata = { title: "Wyniki · CodePortal" };
 
 const graded = EXAMS.filter((e) => e.status === "review" || e.status === "finished");
 
-/** F15 · Wyniki: testy do zatwierdzenia i prace z sygnałami. */
 export default function ResultsPage() {
   return (
     <>

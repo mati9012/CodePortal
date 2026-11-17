@@ -2,11 +2,6 @@ import type { ReactNode } from "react";
 import { Bit } from "@/components/brand/bit";
 import { cn } from "@/lib/cn";
 
-/**
- * Pusty stan — zawsze z wezwaniem do działania.
- * Bit (M) pojawia się domyślnie; wyłącz go (`mascot={false}`) w kontekstach,
- * w których maskotki nie ma (raporty, błędy, oceny).
- */
 export function EmptyState({
   title,
   description,

@@ -2,13 +2,11 @@ const dateFmt = new Intl.DateTimeFormat("pl-PL", { day: "numeric", month: "short
 const timeFmt = new Intl.DateTimeFormat("pl-PL", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Warsaw" });
 const weekdayFmt = new Intl.DateTimeFormat("pl-PL", { weekday: "short", timeZone: "Europe/Warsaw" });
 
-/** „pon., 18 lis · 08:55” */
 export function formatWhen(iso: string) {
   const d = new Date(iso);
   return `${weekdayFmt.format(d)}, ${dateFmt.format(d)} · ${timeFmt.format(d)}`;
 }
 
-/** „18 lis” */
 export function formatDay(iso: string) {
   return dateFmt.format(new Date(iso));
 }

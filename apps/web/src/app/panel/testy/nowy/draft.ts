@@ -1,6 +1,5 @@
 import { PROBLEMS, type Problem } from "@/lib/mock/panel";
 
-/** Pozycja testu: pojedyncze zadanie albo pula („każdy uczeń losuje 1 z N”). */
 export type Item =
   | { key: string; kind: "problem"; id: string; points: number }
   | { key: string; kind: "pool"; ids: string[]; points: number };
@@ -29,7 +28,6 @@ export type Draft = {
   shuffle: boolean;
   results: ResultsVisibility;
   scoring: "best" | "last";
-  /** Próg procentowy dla ocen 2…6 (rosnąco). */
   thresholds: [number, number, number, number, number];
 };
 

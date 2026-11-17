@@ -7,7 +7,6 @@ import { ProblemBank } from "./problem-bank";
 
 export const metadata: Metadata = { title: "Bank zadań · CodePortal" };
 
-/** F8 · Bank zadań. */
 export default function ProblemsPage() {
   return (
     <>

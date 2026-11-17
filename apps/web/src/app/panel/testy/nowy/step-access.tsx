@@ -22,7 +22,6 @@ const PROTECTION: { value: Protection; title: string; description: string; featu
   { value: "exam", title: "Egzamin", description: "Ważne sprawdziany", features: ["Wszystko ze Standardu", "Limit wyjść z pełnego ekranu"] },
 ];
 
-/** Krok 3 · Dostęp i ochrona. */
 export function StepAccess({ draft, update, errors }: StepProps) {
   const hasGroup = GROUPS.some((g) => g.id === draft.groupId);
   return (

@@ -7,8 +7,6 @@ import { AppService } from './app.service.js';
 import { AuthModule } from './auth/auth.module.js';
 import { schema } from './db/index.js';
 
-// Moduły domenowe (wg docs/SPEC.md): auth, problems, exams, sessions, submissions, integrity.
-// Bazę wstrzykujesz przez `@InjectDrizzle() private readonly db: Db` (typ z ./db/index.js).
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),

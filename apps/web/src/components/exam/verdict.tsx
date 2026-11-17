@@ -3,7 +3,6 @@ import type { ReactNode } from "react";
 import { cn } from "@/lib/cn";
 import { formatMemoryKb, formatMs } from "./format";
 
-/** Zgodne z enumem `verdict` w bazie (apps/api/src/db/schema.ts). */
 export type Verdict = "OK" | "WA" | "TLE" | "MLE" | "RE" | "CE";
 export type VerdictOrPending = Verdict | "PENDING";
 
@@ -25,7 +24,6 @@ export const VERDICT_META: Record<
   },
 };
 
-/** Pigułka werdyktu: „✓ OK”, „✕ WA”, „◷ TLE”… */
 export function VerdictPill({
   verdict,
   showIcon = true,
@@ -34,7 +32,6 @@ export function VerdictPill({
 }: {
   verdict: VerdictOrPending;
   showIcon?: boolean;
-  /** Pełna nazwa zamiast skrótu („Zła odpowiedź”). */
   long?: boolean;
   className?: string;
 }) {
@@ -54,7 +51,6 @@ export function VerdictPill({
   );
 }
 
-/** Werdykt z metrykami: „OK · 42 ms · 3,1 MB”. */
 export function VerdictDetail({
   verdict,
   timeMs,
@@ -83,10 +79,6 @@ export function VerdictDetail({
   );
 }
 
-/**
- * Pasek wyników testów zgłoszenia — jeden segment na test
- * (zielony zaliczony, czerwony niezaliczony, bursztynowy limit).
- */
 export function TestResultsBar({ verdicts, className }: { verdicts: VerdictOrPending[]; className?: string }) {
   const color: Record<VerdictOrPending, string> = {
     OK: "bg-success",

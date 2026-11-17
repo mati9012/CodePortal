@@ -23,25 +23,28 @@ import { StepBasics } from "./step-basics";
 import { StepGrading } from "./step-grading";
 import { StepProblems } from "./step-problems";
 
+const MOCK_SAVE_DELAY_MS = 700;
+const SAVED_LABEL_REFRESH_MS = 5000;
+const MIN_DURATION_MIN = 5;
+const MIN_PASSWORD_LENGTH = 4;
+
 const STEPS = ["Podstawy", "Zadania", "Dostęp i ochrona", "Ocenianie i publikacja"];
 
 export type StepProps = {
   draft: Draft;
-  /** Obiekt albo funkcja od aktualnego szkicu (przy kilku zmianach pod rząd, np. szybkie „Dodaj”). */
   update: (patch: Partial<Draft> | ((d: Draft) => Partial<Draft>)) => void;
   errors: Partial<Record<keyof Draft, string>>;
 };
 
-/** Błędy blokujące przejście dalej z danego kroku. */
 function validate(step: number, d: Draft): StepProps["errors"] {
   const e: StepProps["errors"] = {};
   if (step === 0) {
     if (!d.title.trim()) e.title = "Nadaj testowi nazwę — zobaczą ją uczniowie.";
-    if (!d.duration || d.duration < 5) e.duration = "Minimum 5 minut.";
+    if (!d.duration || d.duration < MIN_DURATION_MIN) e.duration = `Minimum ${MIN_DURATION_MIN} minut.`;
   }
   if (step === 1 && d.items.length === 0) e.items = "Dodaj przynajmniej jedno zadanie.";
-  if (step === 2 && d.access === "password" && d.password.trim().length < 4)
-    e.password = "Hasło musi mieć co najmniej 4 znaki.";
+  if (step === 2 && d.access === "password" && d.password.trim().length < MIN_PASSWORD_LENGTH)
+    e.password = `Hasło musi mieć co najmniej ${MIN_PASSWORD_LENGTH} znaki.`;
   if (step === 3 && d.thresholds.some((t, i) => i > 0 && t <= d.thresholds[i - 1]!))
     e.thresholds = "Progi muszą rosnąć od oceny 2 do 6.";
   return e;
@@ -53,18 +56,15 @@ export function TestWizard() {
   const [errors, setErrors] = useState<StepProps["errors"]>({});
   const [published, setPublished] = useState<string | null>(null);
   const [save, setSave] = useState<{ saving: boolean; at: number | null }>({ saving: false, at: null });
-  // Ustawiane przy zapisie i co 5 s — nie w renderze (prerender nie może czytać zegara).
   const [now, setNow] = useState(0);
-  const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const saveTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const top = useRef<HTMLDivElement>(null);
 
-  // Odświeżanie „Zapisano X s temu”.
   useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), 5000);
+    const id = setInterval(() => setNow(Date.now()), SAVED_LABEL_REFRESH_MS);
     return () => clearInterval(id);
   }, []);
 
-  // Autozapis szkicu (na razie udawany — TODO: PATCH /exams/:id).
   function update(patch: Parameters<StepProps["update"]>[0]) {
     setDraft((d) => ({ ...d, ...(typeof patch === "function" ? patch(d) : patch) }));
     setErrors((e) => {
@@ -74,12 +74,12 @@ export function TestWizard() {
       return next;
     });
     setSave((s) => ({ ...s, saving: true }));
-    clearTimeout(timer.current);
-    timer.current = setTimeout(() => {
+    clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => {
       const at = Date.now();
       setNow(at);
       setSave({ saving: false, at });
-    }, 700);
+    }, MOCK_SAVE_DELAY_MS);
   }
 
   function go(to: number) {
@@ -146,7 +146,6 @@ export function TestWizard() {
 
       <Stepper steps={STEPS.map((label, i) => ({ label, state: states[i]! }))} className="mb-6 max-sm:[&_li>span:last-child]:hidden" />
 
-      {/* Na kroku „Zadania” lista i bank potrzebują całej szerokości — podsumowanie znika. */}
       <div className={cn("grid gap-6", step !== 1 && "lg:grid-cols-[minmax(0,1fr)_300px]")}>
         <div className="flex min-w-0 flex-col gap-4">
           {Object.keys(errors).length > 0 && (

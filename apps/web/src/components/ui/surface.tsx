@@ -32,7 +32,6 @@ export function CardHeader({
   );
 }
 
-/** Etykieta sekcji wersalikami („MASKOTKA”, „ZADANIE 2 Z 4 · 30 PKT”). */
 export function Eyebrow({ className, ...props }: ComponentProps<"p">) {
   return <p className={cn("text-label uppercase text-ink-2", className)} {...props} />;
 }
@@ -48,7 +47,6 @@ const tagTones: Record<TagTone, string> = {
   danger: "bg-danger-soft text-danger-ink",
 };
 
-/** Tag zadania („pętle”) albo znacznik („nowość”, „polecany”). */
 export function Tag({
   tone = "neutral",
   pill = false,
@@ -68,7 +66,6 @@ export function Tag({
   );
 }
 
-/** Skrót klawiszowy („Ctrl K”, „⇧⌥F”). */
 export function Kbd({ className, ...props }: ComponentProps<"kbd">) {
   return (
     <kbd
@@ -81,7 +78,6 @@ export function Kbd({ className, ...props }: ComponentProps<"kbd">) {
   );
 }
 
-/** Inicjały użytkownika w kółku („AN”). */
 export function Avatar({
   name,
   size = "md",
@@ -111,7 +107,6 @@ export function Avatar({
   );
 }
 
-/** Karta statystyki („Średnia 68,4 / 100 · +6,1 pkt vs poprzedni”). */
 export function StatCard({
   label,
   value,

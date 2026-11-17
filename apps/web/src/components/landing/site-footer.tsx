@@ -7,7 +7,6 @@ const LINKS = [
   { href: "/kontakt", label: "Kontakt" },
 ];
 
-/** Stopka stron publicznych. */
 export function SiteFooter() {
   return (
     <footer className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 pb-10 pt-4 sm:flex-row sm:items-center sm:justify-between sm:px-8">

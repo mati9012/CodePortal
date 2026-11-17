@@ -1,5 +1,3 @@
-// Formatowanie liczb i czasu po polsku („3,1 MB”, „32:14”).
-
 const plNumber = new Intl.NumberFormat("pl-PL", { maximumFractionDigits: 1 });
 
 export function formatMemoryKb(kb: number) {
@@ -14,7 +12,6 @@ export function formatScore(value: number) {
   return plNumber.format(value);
 }
 
-/** Sekundy → „MM:SS” albo „H:MM:SS”. */
 export function formatClock(totalSeconds: number) {
   const s = Math.max(0, Math.floor(totalSeconds));
   const h = Math.floor(s / 3600);

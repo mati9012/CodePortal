@@ -7,10 +7,6 @@ import { Bit } from "@/components/brand/bit";
 import { buttonClasses } from "@/components/ui/button";
 import { Banner } from "@/components/ui/feedback";
 
-/**
- * B5: tu przekierowuje link z e-maila (API weryfikuje token i od razu loguje).
- * Przy błędzie API dokleja `?error=TOKEN_EXPIRED` albo `INVALID_TOKEN`.
- */
 export function VerifyResult() {
   const error = useSearchParams().get("error");
 

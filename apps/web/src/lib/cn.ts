@@ -1,8 +1,6 @@
 import { clsx, type ClassValue } from "clsx";
 import { extendTailwindMerge } from "tailwind-merge";
 
-// tailwind-merge musi znać własne rozmiary tekstu, inaczej `text-h1`
-// uznałby za kolor i usuwał np. `text-ink` przy łączeniu klas.
 const twMerge = extendTailwindMerge({
   extend: {
     classGroups: {

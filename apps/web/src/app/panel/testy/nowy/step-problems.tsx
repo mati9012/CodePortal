@@ -19,7 +19,6 @@ import { LANGUAGE_LABEL, PROBLEMS, type Problem } from "@/lib/mock/panel";
 import { problemById, totalPoints, usedProblemIds, type Item } from "./draft";
 import type { StepProps } from "./wizard";
 
-// Typy danych przeciągania: zadanie z banku albo pozycja z listy testu.
 const DT_PROBLEM = "application/x-cp-problem";
 const DT_ITEM = "application/x-cp-item";
 
@@ -28,12 +27,10 @@ const newKey = () => `i${++seq}-${Math.random().toString(36).slice(2, 7)}`;
 
 const langs = (p: Problem) => p.languages.map((v) => v.map((l) => LANGUAGE_LABEL[l]).join(" + ")).join(" · ");
 
-/** Krok 2 · Zadania: przeciąganie z banku, kolejność, punkty i pule „losuj 1 z N”. */
 export function StepProblems({ draft, update, errors }: StepProps) {
   const items = draft.items;
   const [selected, setSelected] = useState<string[]>([]);
   const [dropAt, setDropAt] = useState<number | null>(null);
-  // Zawsze od aktualnej listy — kilka zmian pod rząd nie nadpisze się nawzajem.
   const setItems = (fn: (cur: Item[]) => Item[]) => update((d) => ({ items: fn(d.items) }));
 
   const add = (id: string, at?: number) => {
@@ -47,7 +44,6 @@ export function StepProblems({ draft, update, errors }: StepProps) {
     setItems((cur) => cur.filter((i) => i.key !== key));
     setSelected((s) => s.filter((k) => k !== key));
   };
-  // `to` to miejsce wstawienia przed przesunięciem (0…length), więc length = na koniec.
   const move = (from: number, to: number) =>
     setItems((cur) => {
       if (to < 0 || to > cur.length || to === from || to === from + 1) return cur;
@@ -59,7 +55,6 @@ export function StepProblems({ draft, update, errors }: StepProps) {
   const setPoints = (key: string, points: number) =>
     setItems((cur) => cur.map((i) => (i.key === key ? { ...i, points } : i)));
 
-  // Zaznaczone zadania → jedna pula w miejscu pierwszego z nich.
   const makePool = () => {
     const chosen = items.filter((i) => selected.includes(i.key) && i.kind === "problem");
     if (chosen.length < 2) return;
@@ -93,7 +88,6 @@ export function StepProblems({ draft, update, errors }: StepProps) {
     }
   };
 
-  // ── Przeciąganie ──
   const onDragOverList = (e: DragEvent, index: number) => {
     if (!e.dataTransfer.types.includes(DT_PROBLEM) && !e.dataTransfer.types.includes(DT_ITEM)) return;
     e.preventDefault();
@@ -115,7 +109,6 @@ export function StepProblems({ draft, update, errors }: StepProps) {
 
   return (
     <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,0.85fr)]">
-      {/* Zadania w teście */}
       <Card className="flex min-w-0 flex-col p-5 sm:p-6">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h2 className="font-display text-h3 text-ink">Zadania w teście</h2>

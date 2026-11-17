@@ -10,7 +10,6 @@ import { Banner } from "@/components/ui/feedback";
 import { TextField } from "@/components/ui/field";
 import { authClient, authErrorMessage } from "@/lib/auth-client";
 
-// TODO(B3): drugi krok — profil z wyborem roli i szkoły, gdy będą organizacje.
 export function RegisterForm() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);

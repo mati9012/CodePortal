@@ -58,7 +58,6 @@ export function Radio({ label, description, className, ...props }: ChoiceProps) 
   );
 }
 
-/** Przełącznik on/off („Pełny ekran wymagany”). */
 export function Switch({ label, description, className, ...props }: ChoiceProps) {
   return (
     <label
@@ -88,10 +87,6 @@ export function Switch({ label, description, className, ...props }: ChoiceProps)
   );
 }
 
-/**
- * Karta wyboru (radio) — np. poziom ochrony Luźny / Standard / Egzamin.
- * Używaj kilku z tym samym `name`.
- */
 export function SelectionCard({
   title,
   description,

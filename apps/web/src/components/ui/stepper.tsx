@@ -4,7 +4,6 @@ import { cn } from "@/lib/cn";
 
 export type StepState = "done" | "current" | "upcoming";
 
-/** Stepper kreatora testu: pasek postępu nad każdym krokiem. */
 export function Stepper({
   steps,
   className,

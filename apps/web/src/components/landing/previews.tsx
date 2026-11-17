@@ -4,13 +4,6 @@ import { Bit } from "@/components/brand/bit";
 import { VerdictPill, type Verdict } from "@/components/exam/verdict";
 import { cn } from "@/lib/cn";
 
-/*
- * Ilustracje produktu na stronie głównej. Statyczne makiety z prawdziwych komponentów
- * (werdykty, kolory tokenów), oznaczone aria-hidden — treść niesie tekst obok.
- */
-
-// ── Hero: widok zadania w ciemnym motywie IDE ───────────────────────────────
-
 const kw = "text-[#C792EA]";
 const ty = "text-[#82AAFF]";
 const num = "text-[#F78C6C]";
@@ -46,7 +39,6 @@ export function HeroPreview() {
         data-theme="dark"
         className="overflow-hidden rounded-modal border border-line bg-surface text-ink shadow-lg"
       >
-        {/* Pasek testu */}
         <div className="flex items-center gap-2 border-b border-line px-3 py-2 text-xs">
           <span className="truncate font-semibold">Sprawdzian – pętle</span>
           <span className="ml-1 rounded-tag bg-success-soft px-1.5 font-mono text-[11px] text-success-ink">
@@ -59,7 +51,6 @@ export function HeroPreview() {
           <span className="ml-auto font-mono tabular-nums text-ink-2">32:14</span>
         </div>
         <div className="grid grid-cols-[minmax(0,2fr)_minmax(0,5fr)]">
-          {/* Treść zadania */}
           <div className="border-r border-line p-3">
             <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-ink-2">
               Zadanie 2 · 30 pkt
@@ -73,7 +64,6 @@ export function HeroPreview() {
               ))}
             </div>
           </div>
-          {/* Edytor */}
           <pre className="overflow-hidden bg-canvas py-3 font-mono text-[11.5px] leading-[1.7] sm:text-xs">
             {CODE.map((line, i) => (
               <div key={i} className={cn("flex pr-3", i === 2 && "bg-accent/10")}>
@@ -84,7 +74,6 @@ export function HeroPreview() {
             <div className="h-12" />
           </pre>
         </div>
-        {/* Wyniki */}
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-line py-2.5 pl-24 pr-3 text-xs">
           <span className="font-mono font-semibold text-warning-ink">21 / 30 pkt</span>
           <span className="text-ink-2">7 z 10 testów</span>
@@ -103,8 +92,6 @@ export function HeroPreview() {
     </div>
   );
 }
-
-// ── Wspólna rama makiet funkcji ─────────────────────────────────────────────
 
 function Frame({ children, className }: { children: ReactNode; className?: string }) {
   return (
@@ -155,8 +142,6 @@ function Glyph({ children, className }: { children: ReactNode; className?: strin
   );
 }
 
-// ── Edytor: podpowiedzi ─────────────────────────────────────────────────────
-
 export function EditorPreview() {
   return (
     <Frame>
@@ -189,8 +174,6 @@ export function EditorPreview() {
   );
 }
 
-// ── Ocenianie: wyniki testów ────────────────────────────────────────────────
-
 export function GradingPreview() {
   const tests: { v: Verdict; name: string; ms: string }[] = [
     { v: "OK", name: "Test 1 · jawny", ms: "3 ms" },
@@ -213,8 +196,6 @@ export function GradingPreview() {
   );
 }
 
-// ── Samodzielność: oś zdarzeń ───────────────────────────────────────────────
-
 export function IntegrityPreview() {
   return (
     <Frame>
@@ -230,7 +211,6 @@ export function IntegrityPreview() {
       <Row lead={<Glyph className="bg-accent-soft text-accent-ink"><ArrowUp /></Glyph>} meta="10:54">
         Zgłoszenie · <span className="font-mono">21/30</span>
       </Row>
-      {/* Pasek odtwarzania przebiegu */}
       <div className="flex items-center gap-3 px-1 pt-1 text-[11px] text-ink-2">
         <span className="font-mono">16×</span>
         <div className="relative h-1.5 flex-1 rounded-full bg-line">
@@ -248,8 +228,6 @@ export function IntegrityPreview() {
     </Frame>
   );
 }
-
-// ── Konkursy: ranking ───────────────────────────────────────────────────────
 
 export function ContestPreview() {
   const rows = [
