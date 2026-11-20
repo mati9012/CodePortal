@@ -22,6 +22,7 @@ import {
 import { examEnd, examTiming, MINUTE_MS, settingsOf } from './exam-rules.js';
 import { joinFiles } from './code-files.js';
 import { liveEvents, liveParticipants } from './live.js';
+import { submitLatestDrafts } from './submit-drafts.js';
 
 const ACTIVE_STATUSES = ['pending', 'active'] as const;
 
@@ -102,6 +103,12 @@ export class LiveService {
     const now = new Date();
     await this.db.transaction(async (tx) => {
       await tx.update(exams).set({ endedAt: now }).where(eq(exams.id, examId));
+      await submitLatestDrafts(
+        tx,
+        facts.sessions
+          .filter((s) => s.row.startedAt && s.row.status === 'active')
+          .map((s) => s.row.id),
+      );
       await tx
         .update(sessions)
         .set({ status: 'finished', finishedAt: now, waitingSince: null })
@@ -112,7 +119,9 @@ export class LiveService {
             isNotNull(sessions.startedAt),
           ),
         );
-      await tx.insert(teacherActions).values({ examId, kind: 'end_exam' });
+      await tx
+        .insert(teacherActions)
+        .values({ examId, kind: 'end_exam', createdAt: now });
     });
   }
 
@@ -134,17 +143,20 @@ export class LiveService {
   async endSession(ownerId: string, examId: string, sessionId: string) {
     const facts = await this.examFacts.loadOne(ownerId, examId);
     assertLive(facts);
-    sessionOf(facts, sessionId);
+    const session = sessionOf(facts, sessionId);
+    const now = new Date();
     await this.db.transaction(async (tx) => {
+      if (session.row.status === 'active')
+        await submitLatestDrafts(tx, [sessionId]);
       await tx
         .update(sessions)
-        .set({ status: 'finished', finishedAt: new Date(), waitingSince: null })
+        .set({ status: 'finished', finishedAt: now, waitingSince: null })
         .where(
           and(eq(sessions.id, sessionId), ne(sessions.status, 'finished')),
         );
       await tx
         .insert(teacherActions)
-        .values({ examId, sessionId, kind: 'end_session' });
+        .values({ examId, sessionId, kind: 'end_session', createdAt: now });
     });
   }
 

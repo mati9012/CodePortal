@@ -22,13 +22,23 @@ function messageOf(body: unknown) {
   return FALLBACK_ERROR;
 }
 
-export async function api<T = void>(path: string, init?: { method?: string; body?: unknown }): Promise<T> {
+type ApiInit = { method?: string; body?: unknown; token?: string; keepalive?: boolean };
+
+function headersFor(init?: ApiInit) {
+  const headers: Record<string, string> = {};
+  if (init?.body !== undefined) headers["Content-Type"] = "application/json";
+  if (init?.token) headers.Authorization = `Bearer ${init.token}`;
+  return headers;
+}
+
+export async function api<T = void>(path: string, init?: ApiInit): Promise<T> {
   let response: Response;
   try {
     response = await fetch(`${API_URL}${path}`, {
       method: init?.method ?? (init?.body === undefined ? "GET" : "POST"),
       credentials: "include",
-      headers: init?.body === undefined ? undefined : { "Content-Type": "application/json" },
+      keepalive: init?.keepalive,
+      headers: headersFor(init),
       body: init?.body === undefined ? undefined : JSON.stringify(init.body),
     });
   } catch {

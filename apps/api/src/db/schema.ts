@@ -14,7 +14,7 @@ import {
   unique,
   uuid,
 } from 'drizzle-orm/pg-core';
-import type { ExamSettings, Language, ProblemVariant } from '@codeportal/contracts';
+import type { CodeFile, ExamSettings, Language, ProblemVariant } from '@codeportal/contracts';
 
 const id = () => uuid().primaryKey().defaultRandom();
 const createdAt = () => timestamp({ withTimezone: true }).notNull().defaultNow();
@@ -25,7 +25,7 @@ const updatedAt = () =>
     .defaultNow()
     .$onUpdate(() => new Date());
 
-export type CodeFile = { path: string; content: string };
+export type { CodeFile };
 export type StarterCode = Record<string, CodeFile[]>;
 export type EditorEventType = 'delta' | 'paste_blocked' | 'blur' | 'fullscreen_exit' | 'run';
 export type SimilarityMethod = 'tokens' | 'ast' | 'ai_reference';

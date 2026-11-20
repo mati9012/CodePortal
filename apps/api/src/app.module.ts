@@ -7,6 +7,7 @@ import { AppService } from './app.service.js';
 import { AuthModule } from './auth/auth.module.js';
 import { schema } from './db/index.js';
 import { PanelModule } from './panel/panel.module.js';
+import { StudentModule } from './student/student.module.js';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { PanelModule } from './panel/panel.module.js';
     }),
     AuthModule,
     PanelModule,
+    StudentModule,
   ],
   controllers: [AppController],
   providers: [AppService],

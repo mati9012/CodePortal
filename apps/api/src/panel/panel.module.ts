@@ -29,5 +29,6 @@ import { ProblemsService } from './problems/problems.service.js';
     ProblemsService,
     DashboardService,
   ],
+  exports: [ExamFactsService],
 })
 export class PanelModule {}

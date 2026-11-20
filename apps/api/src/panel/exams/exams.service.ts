@@ -13,8 +13,6 @@ import {
 } from '@nestjs/common';
 import { InjectDrizzle } from '@nestjs/drizzle';
 import { and, asc, eq, inArray } from 'drizzle-orm';
-import { randomBytes, scrypt as scryptCallback } from 'node:crypto';
-import { promisify } from 'node:util';
 import { postgresCode, UNIQUE_VIOLATION } from '../../db/errors.js';
 import type { Db } from '../../db/index.js';
 import {
@@ -32,20 +30,13 @@ import {
   settingsOf,
   type ExamRow,
 } from './exam-rules.js';
+import { hashPassword } from './exam-password.js';
 import { joinCode } from './join-code.js';
 import { fromWarsaw, toWarsaw } from './warsaw-time.js';
-
-const scrypt = promisify(scryptCallback) as (
-  password: string,
-  salt: Buffer,
-  keylen: number,
-) => Promise<Buffer>;
 
 const CODE_ATTEMPTS = 8;
 const MIN_PUBLISH_DURATION_MIN = 5;
 const MIN_PASSWORD_LENGTH = 4;
-const PASSWORD_KEY_LENGTH = 32;
-const SALT_BYTES = 16;
 const COPY_SUFFIX = ' (kopia)';
 
 const ACCESS_TYPE = {
@@ -56,12 +47,6 @@ const ACCESS_TYPE = {
 } as const;
 
 type ExamProblemRow = typeof examProblems.$inferSelect;
-
-async function hashPassword(password: string) {
-  const salt = randomBytes(SALT_BYTES);
-  const key = await scrypt(password, salt, PASSWORD_KEY_LENGTH);
-  return `${salt.toString('hex')}:${key.toString('hex')}`;
-}
 
 function itemsFrom(rows: ExamProblemRow[]): ExamItem[] {
   const items: ExamItem[] = [];

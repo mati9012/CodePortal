@@ -212,12 +212,12 @@ MVP da się zbudować w ok. 6–8 tygodni w pojedynkę, jeśli ocenianie oprze s
 ### Etap 1 — MVP (działający sprawdzian w klasie)
 
 - [x] Konta organizatorów: rejestracja, weryfikacja e-maila, logowanie, reset hasła
-- [ ] Wejście uczestnika kodem/linkiem jako gość (token sesji egzaminu)
+- [x] Wejście uczestnika kodem/linkiem jako gość (token sesji egzaminu)
 - [ ] Bank zadań: treść MD, testy jawne/ukryte, limity
 - [ ] Edytor Monaco: HTML, CSS, JS, Python, Java, C#, C++, PHP — kolory, podstawowe podpowiedzi, formatowanie
 - [ ] Judge0 self-hosted + kolejka BullMQ, werdykty i punkty (Python, Java, C#, C++, JS, PHP)
 - [ ] Zadania łączone (np. HTML + CSS + PHP): wiele plików, podgląd na żywo, ocena ręczna
-- [ ] Blokada wklejania, fullscreen, log zdarzeń (blur, paste)
+- [x] Blokada wklejania, fullscreen, log zdarzeń (blur, paste)
 - [ ] Wyniki + eksport CSV
 
 ### Etap 2 — Uczciwość i szkoły

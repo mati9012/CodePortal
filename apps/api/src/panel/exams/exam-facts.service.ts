@@ -45,7 +45,7 @@ type SignalEventRow = typeof editorEvents.$inferSelect;
 type TeacherActionRow = typeof teacherActions.$inferSelect;
 export type StudentRow = typeof groupStudents.$inferSelect;
 
-type Slot = {
+export type Slot = {
   number: number;
   problemIds: string[];
   titles: string[];
@@ -97,7 +97,7 @@ const payloadOf = (event: SignalEventRow) =>
 export const fullName = (s: { firstName: string; lastName: string }) =>
   `${s.firstName} ${s.lastName}`;
 
-function buildSlots(
+export function buildSlots(
   rows: {
     problemId: string;
     poolTag: string | null;

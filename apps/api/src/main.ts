@@ -6,6 +6,8 @@ import { AppModule } from './app.module.js';
 import { AUTH } from './auth/auth.constants.js';
 import type { Auth } from './auth/auth.js';
 
+const JSON_BODY_LIMIT = '2mb';
+
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     bodyParser: false,
@@ -20,7 +22,7 @@ async function bootstrap() {
     .getHttpAdapter()
     .getInstance()
     .all('/api/auth/{*path}', toNodeHandler(app.get<Auth>(AUTH)));
-  app.useBodyParser('json');
+  app.useBodyParser('json', { limit: JSON_BODY_LIMIT });
   app.useBodyParser('urlencoded', { extended: true });
   await app.listen(process.env.PORT ?? 4000);
 }

@@ -124,12 +124,14 @@ export function ProblemTiles({
   activeNumber,
   showMax = false,
   scoreOnly = false,
+  onSelect,
   className,
 }: {
   problems: ProblemTile[];
   activeNumber?: number;
   showMax?: boolean;
   scoreOnly?: boolean;
+  onSelect?: (number: number) => void;
   className?: string;
 }) {
   return (
@@ -137,29 +139,28 @@ export function ProblemTiles({
       {problems.map((p) => {
         const active = p.number === activeNumber;
         const tone = p.score === undefined ? null : scoreTone(p.score, p.max);
+        const Tile = onSelect ? "button" : "span";
         return (
-          <li
-            key={p.number}
-            aria-current={active ? "step" : undefined}
-            className={cn(
-              "inline-flex h-7 min-w-7 items-center justify-center gap-1 rounded-tag px-2 font-mono text-xs font-semibold tabular-nums",
-              tone ? chipTone[tone] : "border border-dashed border-line text-ink-2",
-              active && "ring-[1.5px] ring-accent ring-offset-0",
-              active && !tone && "border-solid border-transparent bg-accent-soft text-accent-ink",
-            )}
-          >
-            {scoreOnly && p.score !== undefined ? (
-              formatScore(p.score)
-            ) : (
-              p.number
-            )}
-            {!scoreOnly && p.score !== undefined && (
-              <span className="font-medium">
-                · {formatScore(p.score)}
-                {showMax && `/${p.max}`}
-              </span>
-            )}
-            {!scoreOnly && tone === "success" && p.score === p.max && <Check className="size-3" aria-hidden />}
+          <li key={p.number} aria-current={active ? "step" : undefined}>
+            <Tile
+              {...(onSelect && { type: "button" as const, onClick: () => onSelect(p.number), "aria-label": `Zadanie ${p.number}` })}
+              className={cn(
+                "inline-flex h-7 min-w-7 items-center justify-center gap-1 rounded-tag px-2 font-mono text-xs font-semibold tabular-nums",
+                tone ? chipTone[tone] : "border border-dashed border-line text-ink-2",
+                active && "ring-[1.5px] ring-accent ring-offset-0",
+                active && !tone && "border-solid border-transparent bg-accent-soft text-accent-ink",
+                onSelect && "cursor-pointer focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-primary-300/60",
+              )}
+            >
+              {scoreOnly && p.score !== undefined ? formatScore(p.score) : p.number}
+              {!scoreOnly && p.score !== undefined && (
+                <span className="font-medium">
+                  · {formatScore(p.score)}
+                  {showMax && `/${p.max}`}
+                </span>
+              )}
+              {!scoreOnly && tone === "success" && p.score === p.max && <Check className="size-3" aria-hidden />}
+            </Tile>
           </li>
         );
       })}

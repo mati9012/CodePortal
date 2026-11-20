@@ -106,4 +106,24 @@ Wszystkie trasy pod `/panel/*` wymagają sesji (ciasteczko Better Auth) i roli `
 
 - Status testu (szkic → zaplanowany → trwa → do sprawdzenia → zakończony) wynika z `published_at`, `starts_at`, `ends_at`, `ended_at` i `results_approved_at`, nie jest zapisywany osobno.
 - Ryzyko samodzielności liczy `apps/api/src/panel/exams/risk.ts` z `editor_events` (zablokowane wklejenia, wyjścia z okna, skoki kodu) i `similarity_pairs`.
-- Akcje nauczyciela w trakcie testu (dodany czas, wiadomości, wpuszczenie, zakończenie) trafiają do `teacher_actions` — z tej tabeli będzie czytać widok ucznia.
+- Akcje nauczyciela w trakcie testu (dodany czas, wiadomości, wpuszczenie, zakończenie) trafiają do `teacher_actions` — z tej tabeli czyta widok ucznia.
+
+## Widok ucznia
+
+Uczeń nie ma konta: wchodzi na `/dolacz` albo `/t/<KOD>`, podaje imię i nazwisko (przy dostępie „lista” musi pasować do listy klasy, przy „hasło” podaje hasło testu) i dostaje token sesji egzaminu. Token to `id_sesji.podpis` (HMAC z `BETTER_AUTH_SECRET`), front trzyma go w `localStorage` pod `cp-exam-<KOD>` i wysyła w nagłówku `Authorization: Bearer …`. Dzięki temu po odświeżeniu albo awarii przeglądarki uczeń wraca do tej samej sesji.
+
+| Trasa | Do czego |
+| --- | --- |
+| `GET /exam/:code` | publiczne informacje o teście (strona przed startem) |
+| `POST /exam/:code/join` | dołączenie, zwraca token |
+| `GET /exam-session` | pełny stan sesji; front odpytuje go co 5 s i z niego dowiaduje się o dodanym czasie, wiadomościach i zakończeniu przez nauczyciela |
+| `POST /exam-session/start` | start po sprawdzeniu sprzętu — od tej chwili płynie czas |
+| `PUT /exam-session/code` | autozapis (`code_snapshots`, co 2 s przy zmianach) |
+| `POST /exam-session/events` | telemetria do `editor_events`: zmiany kodu, zablokowane wklejenia, wyjścia z okna i z pełnego ekranu |
+| `POST /exam-session/submit` | zgłoszenie rozwiązania (`submissions` ze statusem `queued`) |
+| `POST /exam-session/finish` | zakończenie przez ucznia |
+
+- Czas liczy serwer: po upływie `deadline_at` (albo gdy nauczyciel kończy test lub sesję) ostatnie niezgłoszone wersje kodu zgłaszają się same (`submit-drafts.ts`). Zakończenie przez ucznia niczego nie zgłasza — okno zakończenia ostrzega o niezgłoszonych zadaniach.
+- Przekroczenie limitu wyjść z pełnego ekranu ustawia `waiting_since`; uczeń czeka, aż nauczyciel wpuści go ponownie w panelu na żywo.
+- Pule zadań: każda sesja dostaje jedno zadanie z puli, wybrane deterministycznie z `id` sesji.
+- Uruchamianie kodu i ocenianie czekają na sprawdzarkę (judge) — do tego czasu zgłoszenia zostają w kolejce ze statusem „Ocenianie…”.
